@@ -35,19 +35,20 @@ readonly NC='\033[0m' # No Color
 # Global Variables
 # =============================================================================
 
-# Installation paths
-readonly INSTALL_DIR="/usr/local/bin"
-readonly CONFIG_DIR="/etc/bashmenu"
+# Installation paths - Optimized for cloud servers
+readonly INSTALL_DIR="/opt/bashmenu"
+readonly CONFIG_DIR="/opt/bashmenu/config"
 readonly LOG_DIR="/var/log/bashmenu"
-readonly PLUGIN_DIR="/usr/local/share/bashmenu/plugins"
+readonly PLUGIN_DIR="/opt/bashmenu/plugins"
+readonly SCRIPTS_DIR="/opt/scripts"
 
 # Current directory
 readonly CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Installation options
+# Installation options - Optimized for cloud servers
 INSTALL_TYPE="system"
 CREATE_SYMLINK=true
-BACKUP_EXISTING=true
+BACKUP_EXISTING=false  # No backups needed for fresh server installs
 INSTALL_PLUGINS=true
 
 # =============================================================================
@@ -92,9 +93,9 @@ check_requirements() {
     local errors=0
     
     # Check if running as root for system installation
-    if [[ "$INSTALL_TYPE" == "system" && "$EUID" -ne 0 ]]; then
+    if [[ "$EUID" -ne 0 ]]; then
         print_error "System installation requires root privileges"
-        print_info "Run with sudo or use --user installation"
+        print_info "Run with sudo: sudo ./install.sh"
         errors=$((errors + 1))
     fi
     
@@ -131,15 +132,9 @@ check_requirements() {
 
 create_directories() {
     print_info "Creating installation directories..."
-    
-    local dirs=()
-    
-    if [[ "$INSTALL_TYPE" == "system" ]]; then
-        dirs=("$CONFIG_DIR" "$LOG_DIR" "$PLUGIN_DIR")
-    else
-        dirs=("$HOME/.bashmenu" "$HOME/.bashmenu/plugins" "$HOME/.bashmenu/logs")
-    fi
-    
+
+    local dirs=("$INSTALL_DIR" "$CONFIG_DIR" "$LOG_DIR" "$PLUGIN_DIR" "$SCRIPTS_DIR")
+
     for dir in "${dirs[@]}"; do
         if mkdir -p "$dir" 2>/dev/null; then
             print_success "Created directory: $dir"
@@ -148,31 +143,16 @@ create_directories() {
             return 1
         fi
     done
-    
+
     return 0
 }
 
 install_main_script() {
     print_info "Installing main script..."
-    
+
     local source_file="$CURRENT_DIR/bashmenu"
-    local target_file
-    
-    if [[ "$INSTALL_TYPE" == "system" ]]; then
-        target_file="$INSTALL_DIR/bashmenu"
-    else
-        target_file="$HOME/.local/bin/bashmenu"
-        mkdir -p "$(dirname "$target_file")"
-    fi
-    
-    # Backup existing file if requested
-    if [[ "$BACKUP_EXISTING" == "true" && -f "$target_file" ]]; then
-        local backup_file="${target_file}.backup.$(date +%Y%m%d_%H%M%S)"
-        if cp "$target_file" "$backup_file"; then
-            print_info "Backed up existing file: $backup_file"
-        fi
-    fi
-    
+    local target_file="$INSTALL_DIR/bashmenu"
+
     # Copy main script
     if cp "$source_file" "$target_file"; then
         chmod +x "$target_file"
@@ -181,46 +161,26 @@ install_main_script() {
         print_error "Failed to install main script"
         return 1
     fi
-    
-    # Create symlink if requested
-    if [[ "$CREATE_SYMLINK" == "true" ]]; then
-        local symlink_target="/usr/local/bin/bashmenu"
-        if [[ "$INSTALL_TYPE" == "user" ]]; then
-            symlink_target="$HOME/.local/bin/bashmenu"
-        fi
-        
-        if [[ ! -L "$symlink_target" ]]; then
-            if ln -sf "$target_file" "$symlink_target"; then
-                print_success "Created symlink: $symlink_target"
-            else
-                print_warning "Failed to create symlink"
-            fi
+
+    # Create symlink in /usr/local/bin for global access
+    local symlink_target="/usr/local/bin/bashmenu"
+    if [[ ! -L "$symlink_target" ]]; then
+        if ln -sf "$target_file" "$symlink_target"; then
+            print_success "Created global symlink: $symlink_target"
+        else
+            print_warning "Failed to create global symlink"
         fi
     fi
-    
+
     return 0
 }
 
 install_configuration() {
     print_info "Installing configuration files..."
-    
+
     local source_config="$CURRENT_DIR/config/config.conf"
-    local target_config
-    
-    if [[ "$INSTALL_TYPE" == "system" ]]; then
-        target_config="$CONFIG_DIR/config.conf"
-    else
-        target_config="$HOME/.bashmenu/config.conf"
-    fi
-    
-    # Backup existing config if requested
-    if [[ "$BACKUP_EXISTING" == "true" && -f "$target_config" ]]; then
-        local backup_file="${target_config}.backup.$(date +%Y%m%d_%H%M%S)"
-        if cp "$target_config" "$backup_file"; then
-            print_info "Backed up existing config: $backup_file"
-        fi
-    fi
-    
+    local target_config="$CONFIG_DIR/config.conf"
+
     # Copy configuration
     if cp "$source_config" "$target_config"; then
         print_success "Installed configuration: $target_config"
@@ -228,7 +188,7 @@ install_configuration() {
         print_error "Failed to install configuration"
         return 1
     fi
-    
+
     return 0
 }
 
@@ -237,18 +197,12 @@ install_plugins() {
         print_info "Skipping plugin installation"
         return 0
     fi
-    
+
     print_info "Installing plugins..."
-    
+
     local source_plugin_dir="$CURRENT_DIR/plugins"
-    local target_plugin_dir
-    
-    if [[ "$INSTALL_TYPE" == "system" ]]; then
-        target_plugin_dir="$PLUGIN_DIR"
-    else
-        target_plugin_dir="$HOME/.bashmenu/plugins"
-    fi
-    
+    local target_plugin_dir="$PLUGIN_DIR"
+
     if [[ -d "$source_plugin_dir" ]]; then
         if cp -r "$source_plugin_dir"/* "$target_plugin_dir/" 2>/dev/null; then
             print_success "Installed plugins to: $target_plugin_dir"
@@ -258,26 +212,25 @@ install_plugins() {
     else
         print_warning "No plugins directory found"
     fi
-    
+
     return 0
 }
 
 set_permissions() {
     print_info "Setting file permissions..."
-    
-    local target_file
-    
-    if [[ "$INSTALL_TYPE" == "system" ]]; then
-        target_file="$INSTALL_DIR/bashmenu"
-    else
-        target_file="$HOME/.local/bin/bashmenu"
+
+    # Set permissions for main script
+    if [[ -f "$INSTALL_DIR/bashmenu" ]]; then
+        chmod +x "$INSTALL_DIR/bashmenu"
+        print_success "Set executable permissions on: $INSTALL_DIR/bashmenu"
     fi
-    
-    if [[ -f "$target_file" ]]; then
-        chmod +x "$target_file"
-        print_success "Set executable permissions on: $target_file"
+
+    # Set permissions for scripts directory
+    if [[ -d "$SCRIPTS_DIR" ]]; then
+        chmod 755 "$SCRIPTS_DIR"
+        print_success "Set permissions on scripts directory: $SCRIPTS_DIR"
     fi
-    
+
     return 0
 }
 
@@ -286,60 +239,25 @@ set_permissions() {
 # =============================================================================
 
 create_desktop_entry() {
-    print_info "Creating desktop entry..."
-    
-    local desktop_dir
-    if [[ "$INSTALL_TYPE" == "system" ]]; then
-        desktop_dir="/usr/share/applications"
-    else
-        desktop_dir="$HOME/.local/share/applications"
-        mkdir -p "$desktop_dir"
-    fi
-    
-    local desktop_file="$desktop_dir/bashmenu.desktop"
-    
-    cat > "$desktop_file" << EOF
-[Desktop Entry]
-Name=Bashmenu
-Comment=System Administration Menu
-Exec=bashmenu
-Icon=utilities-terminal
-Terminal=true
-Type=Application
-Categories=System;Utility;
-Version=1.0
-EOF
-    
-    if [[ -f "$desktop_file" ]]; then
-        print_success "Created desktop entry: $desktop_file"
-    else
-        print_warning "Failed to create desktop entry"
-    fi
+    print_info "Skipping desktop entry creation (server environment)"
+    # Desktop entries are not needed in server environments
 }
 
 update_path() {
-    if [[ "$INSTALL_TYPE" == "user" ]]; then
-        print_info "Updating PATH..."
-        
-        local path_line='export PATH="$HOME/.local/bin:$PATH"'
-        local shell_rc
-        
-        if [[ -f "$HOME/.bashrc" ]]; then
-            shell_rc="$HOME/.bashrc"
-        elif [[ -f "$HOME/.zshrc" ]]; then
-            shell_rc="$HOME/.zshrc"
+    print_info "Ensuring bashmenu is in PATH..."
+
+    # Since we created a symlink in /usr/local/bin, it should be in PATH
+    # But let's verify and add to system-wide profile if needed
+    local path_line='export PATH="/usr/local/bin:$PATH"'
+
+    if [[ -f "/etc/bash.bashrc" ]]; then
+        if ! grep -q "/usr/local/bin" "/etc/bash.bashrc"; then
+            echo "" >> "/etc/bash.bashrc"
+            echo "# Bashmenu PATH" >> "/etc/bash.bashrc"
+            echo "$path_line" >> "/etc/bash.bashrc"
+            print_success "Updated system PATH in /etc/bash.bashrc"
         else
-            print_warning "No shell configuration file found"
-            return 0
-        fi
-        
-        if ! grep -q "$path_line" "$shell_rc"; then
-            echo "" >> "$shell_rc"
-            echo "# Bashmenu PATH" >> "$shell_rc"
-            echo "$path_line" >> "$shell_rc"
-            print_success "Updated PATH in $shell_rc"
-        else
-            print_info "PATH already configured in $shell_rc"
+            print_info "PATH already configured in system profile"
         fi
     fi
 }
@@ -350,16 +268,10 @@ update_path() {
 
 verify_installation() {
     print_info "Verifying installation..."
-    
-    local target_file
-    if [[ "$INSTALL_TYPE" == "system" ]]; then
-        target_file="$INSTALL_DIR/bashmenu"
-    else
-        target_file="$HOME/.local/bin/bashmenu"
-    fi
-    
+
+    local target_file="$INSTALL_DIR/bashmenu"
     local errors=0
-    
+
     # Check if main script exists and is executable
     if [[ ! -f "$target_file" ]]; then
         print_error "Main script not found: $target_file"
@@ -370,7 +282,23 @@ verify_installation() {
     else
         print_success "Main script verified: $target_file"
     fi
-    
+
+    # Check if symlink exists
+    if [[ ! -L "/usr/local/bin/bashmenu" ]]; then
+        print_error "Global symlink not found: /usr/local/bin/bashmenu"
+        errors=$((errors + 1))
+    else
+        print_success "Global symlink verified: /usr/local/bin/bashmenu"
+    fi
+
+    # Check if directories exist
+    for dir in "$CONFIG_DIR" "$PLUGIN_DIR" "$SCRIPTS_DIR"; do
+        if [[ ! -d "$dir" ]]; then
+            print_error "Directory not found: $dir"
+            errors=$((errors + 1))
+        fi
+    done
+
     # Test script execution
     if [[ $errors -eq 0 ]]; then
         if "$target_file" --version >/dev/null 2>&1; then
@@ -380,7 +308,7 @@ verify_installation() {
             errors=$((errors + 1))
         fi
     fi
-    
+
     if [[ $errors -eq 0 ]]; then
         print_success "Installation verification completed"
         return 0
@@ -451,50 +379,50 @@ uninstall() {
 # =============================================================================
 
 install() {
-    print_header "Installing Bashmenu v$SCRIPT_VERSION"
-    
+    print_header "Installing Bashmenu v$SCRIPT_VERSION for Cloud Servers"
+
     # Check requirements
     if ! check_requirements; then
         print_error "Installation aborted due to requirements check failure"
         exit 1
     fi
-    
+
     # Create directories
     if ! create_directories; then
         print_error "Installation aborted due to directory creation failure"
         exit 1
     fi
-    
+
     # Install main script
     if ! install_main_script; then
         print_error "Installation aborted due to script installation failure"
         exit 1
     fi
-    
+
     # Install configuration
     if ! install_configuration; then
         print_error "Installation aborted due to configuration installation failure"
         exit 1
     fi
-    
+
     # Install plugins
     install_plugins
-    
+
     # Set permissions
     set_permissions
-    
-    # Create desktop entry
+
+    # Create desktop entry (skipped for servers)
     create_desktop_entry
-    
+
     # Update PATH
     update_path
-    
+
     # Verify installation
     if ! verify_installation; then
         print_error "Installation verification failed"
         exit 1
     fi
-    
+
     print_header "Installation Completed Successfully"
     echo ""
     print_success "Bashmenu v$SCRIPT_VERSION has been installed successfully!"
@@ -505,15 +433,17 @@ install() {
     echo "  bashmenu --version         # Show version"
     echo "  bashmenu --info            # Show system info"
     echo ""
-    echo -e "${CYAN}Installation Type:${NC} $INSTALL_TYPE"
-    if [[ "$INSTALL_TYPE" == "user" ]]; then
-        echo -e "${CYAN}Location:${NC} $HOME/.local/bin/bashmenu"
-        echo ""
-        echo -e "${YELLOW}Note:${NC} You may need to restart your terminal or run:"
-        echo "  source ~/.bashrc"
-    else
-        echo -e "${CYAN}Location:${NC} $INSTALL_DIR/bashmenu"
-    fi
+    echo -e "${CYAN}Installation Details:${NC}"
+    echo "  Main Script: $INSTALL_DIR/bashmenu"
+    echo "  Global Symlink: /usr/local/bin/bashmenu"
+    echo "  Configuration: $CONFIG_DIR/config.conf"
+    echo "  Plugins: $PLUGIN_DIR/"
+    echo "  Scripts Directory: $SCRIPTS_DIR/"
+    echo ""
+    echo -e "${YELLOW}Next Steps:${NC}"
+    echo "  1. Create your scripts in $SCRIPTS_DIR/"
+    echo "  2. Update $CONFIG_DIR/config.conf to add menu items"
+    echo "  3. Run 'bashmenu' to start the administration menu"
     echo ""
 }
 
@@ -528,33 +458,24 @@ show_help() {
     echo "  ./install.sh [options]"
     echo ""
     echo -e "${CYAN}Options:${NC}"
-    echo "  --user, -u           Install for current user only"
-    echo "  --system, -s         Install system-wide (requires sudo)"
-    echo "  --no-symlink         Don't create symlinks"
-    echo "  --no-backup          Don't backup existing files"
+    echo "  --system, -s         Install system-wide (default for servers)"
     echo "  --no-plugins         Don't install plugins"
     echo "  --uninstall          Uninstall Bashmenu"
     echo "  --help, -h           Show this help message"
+    echo ""
+    echo -e "${CYAN}Server Installation:${NC}"
+    echo "  This installer is optimized for cloud servers and installs to:"
+    echo "  - /opt/bashmenu/     (main application)"
+    echo "  - /opt/scripts/      (your custom scripts)"
+    echo "  - /usr/local/bin/    (global symlink)"
     echo ""
 }
 
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --user|-u)
-                INSTALL_TYPE="user"
-                shift
-                ;;
             --system|-s)
                 INSTALL_TYPE="system"
-                shift
-                ;;
-            --no-symlink)
-                CREATE_SYMLINK=false
-                shift
-                ;;
-            --no-backup)
-                BACKUP_EXISTING=false
                 shift
                 ;;
             --no-plugins)

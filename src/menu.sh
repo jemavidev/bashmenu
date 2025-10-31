@@ -185,32 +185,32 @@ load_theme() {
 display_header() {
     local title="${MENU_TITLE:-Bashmenu}"
     local timestamp=""
-    
+
     if [[ "${SHOW_TIMESTAMP:-true}" == "true" ]]; then
-        timestamp=" [$(date '+%H:%M:%S')]"
+        timestamp="[$(date '+%H:%M:%S')]"
     fi
-    
+
     clear
-    
+
     if [[ -n "$frame_top" ]]; then
         echo -e "$frame_top"
     fi
-    
+
     if [[ -n "$frame_left" && -n "$frame_right" ]]; then
         local width=49
-        local title_with_timestamp="$title$timestamp"
+        local title_with_timestamp="$title $timestamp"
         local padding=$(( (width - ${#title_with_timestamp}) / 2 ))
-        
+
         printf "%s %${padding}s%s%${padding}s %s\n" \
             "$frame_left" "" "$title_with_timestamp" "" "$frame_right"
     else
-        echo -e "${title_color}$title$timestamp${NC}"
+        echo -e "${title_color}$title $timestamp${NC}"
     fi
-    
+
     if [[ -n "$frame_bottom" ]]; then
         echo -e "$frame_bottom"
     fi
-    
+
     echo ""
 }
 

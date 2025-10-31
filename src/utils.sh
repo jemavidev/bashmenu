@@ -47,11 +47,11 @@ print_info() {
 
 print_header() {
     local title="$1"
-    local width=60
+    local width=58  # Total width minus borders
     local padding=$(( (width - ${#title}) / 2 ))
 
     echo -e "${CYAN}╔$(printf '%.0s═' {1..58})╗${NC}"
-    printf "${CYAN}║${NC} %${padding}s%s%${padding}s ${CYAN}║${NC}\n" "" "$title" ""
+    printf "${CYAN}║${NC}%${padding}s%s%${padding}s${CYAN}║${NC}\n" "" "$title" ""
     echo -e "${CYAN}╚$(printf '%.0s═' {1..58})╝${NC}"
 }
 

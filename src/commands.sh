@@ -29,7 +29,7 @@ get_system_info() {
 # System Information Command
 cmd_system_info() {
     clear
-    print_header "🖥️  System Information"
+    print_header "🖥️ System Information"
     echo ""
 
     # System overview with icons

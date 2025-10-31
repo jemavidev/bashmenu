@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# =============================================================================
+# Bashmenu - Enhanced System Administration Menu
+# =============================================================================
+# Description: Main execution script for Bashmenu
+# Version:     2.0
+# Author:      JESUS VILLALOBOS (Enhanced with AI assistance)
+# =============================================================================
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Execute the main script
+exec "$SCRIPT_DIR/src/main.sh" "$@" 

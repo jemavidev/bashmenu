@@ -94,37 +94,27 @@ bashmenu --config /path/to/config.conf
 
 # Show help
 bashmenu --help
-
-# Show version
-bashmenu --version
-
-# Show system information
-bashmenu --info
-
-# Show configuration
-bashmenu --config
 ```
 
 ## 📁 Project Structure
 
 ```
 bashmenu/
-├── bashmenu                 # Main execution script
-├── src/                     # Source code
-│   ├── main.sh             # Main entry point with CLI
-│   ├── utils.sh            # Utility functions
-│   ├── commands.sh         # Command implementations
-│   └── menu.sh             # Menu system with themes
-├── config/                  # Configuration
-│   └── config.conf         # Main configuration file
-├── plugins/                # Plugin directory
-│   └── system_tools.sh     # Example plugin
-├── tests/                  # Test suite
-│   └── test_bashmenu.sh    # Comprehensive tests
-├── docs/                   # Documentation
-├── install.sh              # Installation script
-├── README_ENHANCED.md      # Detailed documentation
-└── README.md               # This file
+├── src/                    # Source code
+│   ├── main.sh            # Main entry point
+│   ├── utils.sh           # Utility functions
+│   ├── commands.sh        # Command implementations
+│   └── menu.sh            # Menu system
+├── config/                 # Configuration
+│   └── config.conf        # Main configuration file
+├── plugins/               # Plugin directory
+│   └── system_tools.sh    # Example plugin
+├── tests/                 # Test suite
+│   └── test_bashmenu.sh   # Comprehensive tests
+├── docs/                  # Documentation
+├── install.sh             # Installation script
+├── README_ENHANCED.md     # This file
+└── README.md              # Original README
 ```
 
 ## ⚙️ Configuration
@@ -143,14 +133,26 @@ DEFAULT_THEME="default"
 AVAILABLE_THEMES=("default" "dark" "colorful" "minimal")
 
 # Logging Settings
-LOG_LEVEL=1
-LOG_FILE="/tmp/bashmenu.log"
+LOG_LEVEL="INFO"
+LOG_FILE="/var/log/bashmenu.log"
 ENABLE_HISTORY=true
 HISTORY_FILE="$HOME/.bashmenu_history.log"
 
 # Security Settings
 ENABLE_PERMISSIONS=false
 ADMIN_USERS=("root" "admin")
+
+# Commands Configuration
+COMMANDS=(
+    "System Information|uname -a|Show detailed system information|1"
+    "Disk Usage|df -h|Show disk space usage|1"
+    "Memory Usage|free -h|Show memory usage|1"
+    "Running Processes|ps aux --sort=-%cpu|Show running processes|1"
+    "Network Status|netstat -tuln|Show network connections|2"
+    "System Load|uptime|Show system load|1"
+    "User Management|who|Show logged users|1"
+    "Package Updates|apt list --upgradable 2>/dev/null|Show available updates|2"
+)
 
 # Plugin Settings
 ENABLE_PLUGINS=true
@@ -198,7 +200,8 @@ themes["custom"]=(
 
 ### Creating a Plugin
 
-Create a new plugin file in the `plugins/` directory:
+1. Create a new file in the `plugins/` directory
+2. Follow the plugin template:
 
 ```bash
 #!/bin/bash
@@ -206,127 +209,201 @@ Create a new plugin file in the `plugins/` directory:
 # Plugin Information
 PLUGIN_NAME="My Plugin"
 PLUGIN_VERSION="1.0"
-PLUGIN_DESCRIPTION="My custom plugin"
+PLUGIN_DESCRIPTION="Description of my plugin"
+
+# Source utilities if needed
+if [[ -z "$RED" ]]; then
+    source "$(dirname "$0")/../src/utils.sh"
+fi
 
 # Plugin Functions
 cmd_my_function() {
-    print_header "My Custom Function"
-    echo "This is my custom function!"
-    echo ""
-    echo -e "${CYAN}Press Enter to continue...${NC}"
-    read -s
+    print_header "My Function"
+    echo "This is my custom function"
+    print_success "Function completed"
 }
 
 # Register plugin commands
-add_menu_item "My Function" "cmd_my_function" "Execute my custom function" 1
+register_plugin_commands() {
+    add_menu_item "My Function" "cmd_my_function" "Description of my function" 1
+}
+
+# Auto-register when plugin is loaded
+register_plugin_commands
 ```
 
 ### Plugin API
 
-- `add_menu_item`: Add a new menu option
-- `print_header`: Display a formatted header
-- `print_success/error/warning/info`: Display colored messages
-- `log_info/debug/warn/error`: Log messages
+- `add_menu_item(name, command, description, level)`: Add menu item
+- `print_header(title)`: Display formatted header
+- `print_success(message)`: Display success message
+- `print_error(message)`: Display error message
+- `print_warning(message)`: Display warning message
+- `print_info(message)`: Display info message
+- `log_info(message)`: Log info message
+- `log_error(message)`: Log error message
 
 ## 🧪 Testing
 
-Run the test suite to verify functionality:
+### Running Tests
 
 ```bash
 # Run all tests
 ./tests/test_bashmenu.sh
 
 # Run specific test categories
-./tests/test_bashmenu.sh --file-existence
-./tests/test_bashmenu.sh --module-loading
-./tests/test_bashmenu.sh --menu-functionality
+./tests/test_bashmenu.sh --file-tests
+./tests/test_bashmenu.sh --function-tests
+./tests/test_bashmenu.sh --integration-tests
+./tests/test_bashmenu.sh --performance-tests
 ```
 
-## 📝 Logging
+### Test Coverage
 
-### Log Levels
+- **File Tests**: Existence and permissions
+- **Function Tests**: Utility and command functions
+- **Integration Tests**: Module interaction
+- **Performance Tests**: Loading and execution speed
+- **Plugin Tests**: Plugin loading and execution
 
-- **DEBUG (0)**: Detailed debugging information
-- **INFO (1)**: General information messages
-- **WARN (2)**: Warning messages
-- **ERROR (3)**: Error messages
+## 🔧 Advanced Usage
 
-### Log Configuration
+### Command Line Options
 
 ```bash
-# Set log level
-LOG_LEVEL=1
+bashmenu [OPTIONS]
 
-# Set log file
-LOG_FILE="/var/log/bashmenu.log"
-
-# Enable command history
-ENABLE_HISTORY=true
-HISTORY_FILE="$HOME/.bashmenu_history.log"
+Options:
+    -h, --help          Show help message
+    -v, --version       Show version information
+    -c, --config FILE   Use custom configuration file
+    -t, --theme THEME   Use custom theme
+    -d, --debug         Enable debug logging
+    -q, --quiet         Disable notifications
+    -n, --no-colors     Disable colors
 ```
 
-## 🔧 Troubleshooting
+### Environment Variables
+
+```bash
+# Override configuration
+export BASHMENU_CONFIG="/path/to/config.conf"
+export BASHMENU_THEME="dark"
+export BASHMENU_LOG_LEVEL="DEBUG"
+
+# Run bashmenu
+bashmenu
+```
+
+### Keyboard Shortcuts
+
+- `Ctrl+C`: Exit immediately
+- `q`: Quick exit
+- `h`: Show help
+- `r`: Refresh menu
+- Arrow keys: Navigate menu
+- Numbers: Select menu item
+
+## 🛠️ Troubleshooting
 
 ### Common Issues
 
 1. **Permission Denied**
    ```bash
-   chmod +x bashmenu
-   chmod +x src/*.sh
+   # Make script executable
+   chmod +x src/main.sh
    ```
 
 2. **Configuration Not Found**
    ```bash
-   # Check if config file exists
+   # Check config file path
    ls -la config/config.conf
-   
-   # Create default config
-   cp config/config.conf.example config/config.conf
    ```
 
 3. **Plugin Not Loading**
    ```bash
-   # Check plugin directory
-   ls -la plugins/
-   
    # Check plugin permissions
-   chmod +x plugins/*.sh
+   chmod 644 plugins/*.sh
+   ```
+
+4. **Logging Issues**
+   ```bash
+   # Check log directory permissions
+   sudo mkdir -p /var/log/bashmenu
+   sudo chown $USER:$USER /var/log/bashmenu
    ```
 
 ### Debug Mode
 
-Enable debug logging for troubleshooting:
-
 ```bash
-# Set debug level
-LOG_LEVEL=0
-
-# Run with debug output
+# Run with debug logging
 bashmenu --debug
+
+# Check log file
+tail -f /tmp/bashmenu.log
 ```
 
+## 📈 Performance
+
+### Benchmarking
+
+The system includes built-in performance monitoring:
+
+```bash
+# Run system benchmark
+# Available in System Tools plugin
+```
+
+### Optimization Tips
+
+1. **Disable unnecessary features** in configuration
+2. **Use minimal theme** for faster rendering
+3. **Reduce log level** for better performance
+4. **Limit plugin loading** to essential plugins
+
 ## 🤝 Contributing
+
+### Development Setup
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+4. Add tests for new features
+5. Run the test suite
+6. Submit a pull request
+
+### Code Style
+
+- Use consistent indentation (4 spaces)
+- Add comments for complex logic
+- Follow Bash best practices
+- Include error handling
+- Add logging for important operations
+
+### Testing Guidelines
+
+- Write tests for new functions
+- Ensure backward compatibility
+- Test on multiple systems
+- Validate configuration changes
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👨‍💻 Author
-
-**JESUS VILLALOBOS** - Enhanced with AI assistance
-
 ## 🙏 Acknowledgments
 
-- Bash scripting community
-- Open source contributors
-- System administration tools inspiration
+- Original concept by Jesus Villalobos
+- Enhanced with AI assistance
+- Community contributions welcome
+- Inspired by various system administration tools
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/jveyes/bashmenu/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/jveyes/bashmenu/discussions)
+- **Documentation**: [Wiki](https://github.com/jveyes/bashmenu/wiki)
 
 ---
 
-**Bashmenu v2.0** - Making system administration easier, one menu at a time! 🚀
+**Made with ❤️ for the Linux community** 

@@ -149,15 +149,6 @@ cmd_show_help() {
     echo -e "   3.  🚪 Exit - Exit the menu"
     echo ""
 
-    #print_separator
-    #echo -e "${CYAN}🔌 Plugin Commands:${NC}"
-    #echo -e "   4.  🩺 System Health Check - Check overall system health"
-    #echo -e "   5.  ⚡ System Benchmark - Run system performance tests"
-    #echo -e "   6.  🔍 Process Analysis - Analyze running processes"
-    #echo -e "   7.  🌐 Network Analysis - Analyze network configuration"
-    #echo -e "   8.  🔒 Security Check - Basic security audit"
-    #echo ""
-
     print_separator
     echo -e "${CYAN}⌨️  Keyboard Shortcuts:${NC}"
     echo -e "   • ${YELLOW}↑↓${NC} Arrow keys: Navigate menu options"

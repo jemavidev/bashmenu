@@ -259,22 +259,8 @@ display_menu() {
 # Display footer
 display_footer() {
     echo ""
-    if [[ -n "$frame_top" ]]; then
-        echo -e "$frame_top"
-    fi
-
-    if [[ -n "$frame_left" && -n "$frame_right" ]]; then
-        # Enhanced footer with better instructions - using printf for frame, echo for colors
-        printf "%s " "$frame_left"
-        echo -e "Use ${selected_color}↑↓${NC} arrows or ${selected_color}numbers${NC} to navigate • ${success_color}Enter${NC} to select • ${error_color}q${NC} to quit"
-        printf " %s\n" "$frame_right"
-    else
-        echo -e "Use ${selected_color}↑↓${NC} arrows or ${selected_color}numbers${NC} to navigate • ${success_color}Enter${NC} to select • ${error_color}q${NC} to quit"
-    fi
-
-    if [[ -n "$frame_bottom" ]]; then
-        echo -e "$frame_bottom"
-    fi
+    # Simple text footer without frame
+    echo -e "Use ${selected_color}↑↓${NC} arrows or ${selected_color}numbers${NC} to navigate • ${success_color}Enter${NC} to select • ${error_color}q${NC} to quit"
 }
 
 # =============================================================================

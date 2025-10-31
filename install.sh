@@ -109,7 +109,7 @@ check_requirements() {
     done
     
     # Check if source files exist
-    local required_files=("src/main.sh" "src/utils.sh" "src/commands.sh" "src/menu.sh" "config/config.conf")
+    local required_files=("src/main.sh" "src/utils.sh" "src/commands.sh" "src/menu.sh" "config/config.conf" "bashmenu")
     for file in "${required_files[@]}"; do
         if [[ ! -f "$CURRENT_DIR/$file" ]]; then
             print_error "Required file not found: $file"
@@ -148,7 +148,7 @@ create_directories() {
 }
 
 install_main_script() {
-    print_info "Installing main script..."
+    print_info "Installing main script and source files..."
 
     local source_file="$CURRENT_DIR/bashmenu"
     local target_file="$INSTALL_DIR/bashmenu"
@@ -159,6 +159,15 @@ install_main_script() {
         print_success "Installed main script: $target_file"
     else
         print_error "Failed to install main script"
+        return 1
+    fi
+
+    # Copy source files to installation directory
+    local src_target_dir="$INSTALL_DIR/src"
+    if mkdir -p "$src_target_dir" && cp -r "$CURRENT_DIR/src/"* "$src_target_dir/"; then
+        print_success "Installed source files to: $src_target_dir"
+    else
+        print_error "Failed to install source files"
         return 1
     fi
 
@@ -301,7 +310,8 @@ verify_installation() {
 
     # Test script execution
     if [[ $errors -eq 0 ]]; then
-        if "$target_file" --version >/dev/null 2>&1; then
+        # Set the PROJECT_ROOT environment variable for the test
+        if PROJECT_ROOT="$INSTALL_DIR" "$target_file" --version >/dev/null 2>&1; then
             print_success "Script execution test passed"
         else
             print_error "Script execution test failed"

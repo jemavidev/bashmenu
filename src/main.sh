@@ -233,28 +233,38 @@ set_default_config() {
 
 show_welcome() {
     clear
-    print_header "Welcome to $SCRIPT_NAME v$SCRIPT_VERSION"
+
+    # Enhanced welcome screen with clean design
+    print_header "Welcome to Bashmenu v$SCRIPT_VERSION"
     echo ""
-    echo -e "${GREEN}System Information:${NC}"
-    echo "Hostname: $(hostname)"
-    echo "OS: $(lsb_release -d | cut -f2 2>/dev/null || echo "Unknown")"
-    echo "Kernel: $(uname -r)"
-    echo "Uptime: $(uptime -p | sed 's/up //')"
-    echo "User: $(whoami)"
+
+    echo -e "${GREEN}🚀 System Information:${NC}"
+    echo -e "   🖥️  Hostname: $(hostname)"
+    echo -e "   🐧 OS: $(lsb_release -d | cut -f2 2>/dev/null || echo "Unknown")"
+    echo -e "   ⚙️  Kernel: $(uname -r)"
+    echo -e "   ⏱️  Uptime: $(uptime -p | sed 's/up //')"
+    echo -e "   👤 User: $(whoami)"
     echo ""
-    
+
+    # System status indicators
     if [[ "${ENABLE_PLUGINS:-true}" == "true" ]]; then
-        echo -e "${CYAN}Plugin System:${NC} Enabled"
+        echo -e "${CYAN}🔌 Plugin System:${NC} ${GREEN}Enabled${NC}"
+    else
+        echo -e "${CYAN}🔌 Plugin System:${NC} ${YELLOW}Disabled${NC}"
     fi
-    
+
     if [[ "${ENABLE_PERMISSIONS:-false}" == "true" ]]; then
-        echo -e "${CYAN}Permission System:${NC} Enabled"
+        echo -e "${CYAN}🔒 Permission System:${NC} ${GREEN}Enabled${NC}"
+    else
+        echo -e "${CYAN}🔒 Permission System:${NC} ${YELLOW}Disabled${NC}"
     fi
-    
+
+    # Show available themes
+    echo -e "${CYAN}🎨 Available Themes:${NC} default, dark, colorful, minimal, modern"
+
     echo ""
-    echo -e "${GREEN}Ready to start!${NC}"
-    echo ""
-    sleep 2
+    echo -e "${GREEN}✨ Ready to start! Press any key to continue...${NC}"
+    read -s -n 1
 }
 
 show_system_info() {

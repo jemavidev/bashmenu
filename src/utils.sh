@@ -28,33 +28,39 @@ log_debug() { echo -e "[DEBUG] $*" >&2; }
 # Utility Functions
 # =============================================================================
 
-# Print functions with colors
+# Print functions with enhanced colors and icons
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    echo -e "${GREEN}✅ $1${NC}"
 }
 
 print_error() {
-    echo -e "${RED}✗ $1${NC}"
+    echo -e "${RED}❌ $1${NC}"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠ $1${NC}"
+    echo -e "${YELLOW}⚠️  $1${NC}"
 }
 
 print_info() {
-    echo -e "${BLUE}ℹ $1${NC}"
+    echo -e "${BLUE}ℹ️  $1${NC}"
 }
 
 print_header() {
     local title="$1"
-    local width=50
+    local width=60
     local padding=$(( (width - ${#title}) / 2 ))
-    
-    echo -e "${CYAN}"
-    printf "%${width}s\n" | tr ' ' '='
-    printf "%${padding}s%s%${padding}s\n" "" "$title" ""
-    printf "%${width}s\n" | tr ' ' '='
-    echo -e "${NC}"
+
+    echo -e "${CYAN}╔$(printf '%.0s═' {1..58})╗${NC}"
+    printf "${CYAN}║${NC} %${padding}s%s%${padding}s ${CYAN}║${NC}\n" "" "$title" ""
+    echo -e "${CYAN}╚$(printf '%.0s═' {1..58})╝${NC}"
+}
+
+print_separator() {
+    echo -e "${CYAN}┌$(printf '%.0s─' {1..58})┐${NC}"
+}
+
+print_separator_end() {
+    echo -e "${CYAN}└$(printf '%.0s─' {1..58})┘${NC}"
 }
 
 # =============================================================================

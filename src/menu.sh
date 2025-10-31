@@ -70,21 +70,22 @@ declare -g minimal_title_color minimal_option_color minimal_selected_color minim
 
 # Initialize themes using simple variables instead of associative arrays
 initialize_themes() {
-    # Default theme
-    export default_frame_top="╭───────────────────────────────────────────────╮"
-    export default_frame_bottom="╰───────────────────────────────────────────────╯"
+    # Default theme - Enhanced with better colors and spacing
+    export default_frame_top="╭─────────────────────────────────────────────────╮"
+    export default_frame_bottom="╰─────────────────────────────────────────────────╯"
     export default_frame_left="│"
     export default_frame_right="│"
     export default_title_color="\033[1;36m"
-    export default_option_color="\033[0m"
+    export default_option_color="\033[0;37m"
     export default_selected_color="\033[1;32m"
     export default_error_color="\033[1;31m"
     export default_success_color="\033[1;32m"
     export default_warning_color="\033[1;33m"
+    export default_info_color="\033[0;34m"
 
-    # Dark theme
-    export dark_frame_top="┌───────────────────────────────────────────────┐"
-    export dark_frame_bottom="└───────────────────────────────────────────────┘"
+    # Dark theme - Enhanced with purple accents and better contrast
+    export dark_frame_top="┌─────────────────────────────────────────────────┐"
+    export dark_frame_bottom="└─────────────────────────────────────────────────┘"
     export dark_frame_left="│"
     export dark_frame_right="│"
     export dark_title_color="\033[1;35m"
@@ -93,10 +94,11 @@ initialize_themes() {
     export dark_error_color="\033[1;31m"
     export dark_success_color="\033[1;32m"
     export dark_warning_color="\033[1;33m"
+    export dark_info_color="\033[0;34m"
 
-    # Colorful theme
-    export colorful_frame_top="╔═══════════════════════════════════════════════╗"
-    export colorful_frame_bottom="╚═══════════════════════════════════════════════╝"
+    # Colorful theme - Enhanced with brighter colors and double lines
+    export colorful_frame_top="╔═════════════════════════════════════════════════╗"
+    export colorful_frame_bottom="╚═════════════════════════════════════════════════╝"
     export colorful_frame_left="║"
     export colorful_frame_right="║"
     export colorful_title_color="\033[1;31m"
@@ -105,18 +107,33 @@ initialize_themes() {
     export colorful_error_color="\033[1;31m"
     export colorful_success_color="\033[1;32m"
     export colorful_warning_color="\033[1;33m"
+    export colorful_info_color="\033[0;34m"
 
-    # Minimal theme
+    # Minimal theme - Clean and simple
     export minimal_frame_top=""
     export minimal_frame_bottom=""
     export minimal_frame_left=""
     export minimal_frame_right=""
-    export minimal_title_color="\033[1m"
-    export minimal_option_color="\033[0m"
+    export minimal_title_color="\033[1;37m"
+    export minimal_option_color="\033[0;37m"
     export minimal_selected_color="\033[1;32m"
     export minimal_error_color="\033[1;31m"
     export minimal_success_color="\033[1;32m"
     export minimal_warning_color="\033[1;33m"
+    export minimal_info_color="\033[0;34m"
+
+    # Modern theme - New sleek design
+    export modern_frame_top="┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+    export modern_frame_bottom="┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+    export modern_frame_left="┃"
+    export modern_frame_right="┃"
+    export modern_title_color="\033[1;38;5;51m"
+    export modern_option_color="\033[0;38;5;250m"
+    export modern_selected_color="\033[1;38;5;46m"
+    export modern_error_color="\033[1;38;5;196m"
+    export modern_success_color="\033[1;38;5;46m"
+    export modern_warning_color="\033[1;38;5;226m"
+    export modern_info_color="\033[0;38;5;39m"
 }
 
 # Load theme
@@ -200,38 +217,45 @@ display_header() {
 # Display menu options
 display_menu() {
     local selected_index="${1:-0}"
-    
+
     for i in "${!menu_options[@]}"; do
         local option="${menu_options[$i]}"
         local description="${menu_descriptions[$i]}"
         local level="${menu_levels[$i]}"
-        
+
         # Check if user has permission
         local user_level=$(get_user_level)
         local can_execute=true
-        
+
         if [[ "${ENABLE_PERMISSIONS:-false}" == "true" && $user_level -lt $level ]]; then
             can_execute=false
         fi
-        
-        # Format option number
-        local option_num="$((i+1))."
-        
+
+        # Format option number with better spacing
+        local option_num="$((i+1))"
+        local padded_num=$(printf "%2d" "$option_num")
+
         # Choose color based on selection and permissions
         local color="$option_color"
+        local icon="  "
+
         if [[ $i -eq $selected_index ]]; then
             color="$selected_color"
+            icon="▶ "
         fi
-        
+
         if [[ "$can_execute" == "false" ]]; then
             color="$warning_color"
-            option_num="$option_num [LOCKED]"
+            icon="🔒 "
         fi
-        
-        # Display option
-        echo -e "$color$option_num $option${NC}"
+
+        # Display option with improved formatting - single line
         if [[ -n "$description" ]]; then
-            echo "    $description"
+            printf "%s %s%-2s " "$frame_left" "$icon" "$padded_num"
+            echo -e "${color}$option${NC} ${info_color}($description)${NC}"
+        else
+            printf "%s %s%-2s " "$frame_left" "$icon" "$padded_num"
+            echo -e "${color}$option${NC}"
         fi
     done
 }
@@ -242,13 +266,16 @@ display_footer() {
     if [[ -n "$frame_top" ]]; then
         echo -e "$frame_top"
     fi
-    
+
     if [[ -n "$frame_left" && -n "$frame_right" ]]; then
-        printf "%s %-47s %s\n" "$frame_left" "Use arrow keys or numbers to navigate" "$frame_right"
+        # Enhanced footer with better instructions - using printf for frame, echo for colors
+        printf "%s " "$frame_left"
+        echo -e "Use ${selected_color}↑↓${NC} arrows or ${selected_color}numbers${NC} to navigate • ${success_color}Enter${NC} to select • ${error_color}q${NC} to quit"
+        printf "%s\n" "$frame_right"
     else
-        echo "Use arrow keys or numbers to navigate"
+        echo -e "Use ${selected_color}↑↓${NC} arrows or ${selected_color}numbers${NC} to navigate • ${success_color}Enter${NC} to select • ${error_color}q${NC} to quit"
     fi
-    
+
     if [[ -n "$frame_bottom" ]]; then
         echo -e "$frame_bottom"
     fi
@@ -262,10 +289,27 @@ display_footer() {
 read_input() {
     local timeout="${1:-30}"
     local choice=""
-    
-    # Try to read with timeout
-    if read -t "$timeout" -p "Enter your choice: " choice; then
-        echo "$choice"
+
+    # Try to read with timeout - using -n1 for single character, -s for silent
+    if read -t "$timeout" -n1 -s choice; then
+        # Handle special keys (arrows)
+        case "$choice" in
+            $'\e')  # Escape sequence start
+                read -t 0.1 -n2 -s rest
+                case "$rest" in
+                    "[A") echo "UP" ;;
+                    "[B") echo "DOWN" ;;
+                    "[C") echo "RIGHT" ;;
+                    "[D") echo "LEFT" ;;
+                    "[H") echo "HOME" ;;
+                    "[F") echo "END" ;;
+                    "") echo "ESC" ;;
+                    *) echo "$choice$rest" ;;
+                esac
+                ;;
+            "") echo "ENTER" ;;
+            *) echo "$choice" ;;
+        esac
     else
         echo "timeout"
     fi
@@ -338,7 +382,7 @@ menu_loop() {
         # Get user input
         local choice
         choice=$(read_input)
-        
+
         # Handle special cases
         case $choice in
             "timeout")
@@ -349,10 +393,14 @@ menu_loop() {
             "q"|"Q"|"quit"|"exit")
                 exit_menu
                 ;;
+            "ENTER")
+                # Enter key pressed - execute selected item
+                execute_menu_item "$selected_index"
+                ;;
             "h"|"H"|"help")
                 cmd_show_help
                 echo -e "\n${success_color}Press Enter to continue...${NC}"
-                read -s
+                read -s -n1
                 continue
                 ;;
             "r"|"R"|"refresh")
@@ -364,29 +412,43 @@ menu_loop() {
                 continue
                 ;;
         esac
-        
+
         # Handle numeric input
-        if validate_numeric_input "$choice" "$max_selection"; then
+        if [[ "$choice" =~ ^[0-9]+$ ]] && validate_numeric_input "$choice" "$max_selection"; then
             selected_index=$((choice - 1))
             execute_menu_item "$selected_index"
+            # Wait for user to continue after executing a command
+            if [[ "${AUTO_REFRESH:-false}" != "true" ]]; then
+                echo -e "\n${success_color}Press Enter to continue...${NC}"
+                read -s -n1
+            fi
+        elif [[ "$choice" == "ENTER" ]]; then
+            # Enter key pressed - execute selected item
+            execute_menu_item "$selected_index"
+            # Wait for user to continue after executing a command
+            if [[ "${AUTO_REFRESH:-false}" != "true" ]]; then
+                echo -e "\n${success_color}Press Enter to continue...${NC}"
+                read -s -n1
+            fi
         else
-            # Handle arrow keys
+            # Handle arrow keys and other navigation
             local new_selection
             new_selection=$(handle_keyboard_input "$choice" "$selected_index" "$max_selection")
-            
+
             if [[ $new_selection -ne $selected_index ]]; then
                 selected_index=$new_selection
+                # Navigation changed - continue to next iteration without waiting
             else
-                echo -e "\n${error_color}Invalid choice: $choice${NC}"
-                echo -e "${error_color}Please enter a number between 1 and $max_selection${NC}"
-                sleep 2
+                # Check if it's a valid single character that should be ignored
+                if [[ ${#choice} -eq 1 ]] && [[ ! "$choice" =~ ^[0-9]$ ]]; then
+                    # Single non-numeric character - ignore silently
+                    continue
+                else
+                    echo -e "\n${error_color}Invalid choice: $choice${NC}"
+                    echo -e "${error_color}Please enter a number between 1 and $max_selection${NC}"
+                    sleep 2
+                fi
             fi
-        fi
-        
-        # Wait for user to continue
-        if [[ "${AUTO_REFRESH:-false}" != "true" ]]; then
-            echo -e "\n${success_color}Press Enter to continue...${NC}"
-            read -s
         fi
     done
 }

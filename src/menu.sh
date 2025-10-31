@@ -25,20 +25,16 @@ initialize_menu() {
     menu_commands=()
     menu_descriptions=()
     menu_levels=()
-    
-    # Add default commands
-    add_menu_item "System Information" "cmd_system_info" "Show detailed system information" 1
-    add_menu_item "Disk Usage" "cmd_disk_usage" "Show disk space usage" 1
-    add_menu_item "Memory Usage" "cmd_memory_usage" "Show memory usage" 1
-    add_menu_item "Running Processes" "cmd_running_processes" "Show top running processes" 1
-    add_menu_item "Network Status" "cmd_network_status" "Show network connections" 2
-    add_menu_item "System Load" "cmd_system_load" "Show system load" 1
-    add_menu_item "User Management" "cmd_user_management" "Show logged users" 1
-    add_menu_item "Package Updates" "cmd_package_updates" "Show available updates" 2
-    add_menu_item "System Monitoring" "cmd_monitor_system" "Monitor system resources" 1
-    add_menu_item "System Maintenance" "cmd_system_maintenance" "Run maintenance tasks" 2
-    add_menu_item "Show Help" "cmd_show_help" "Display help information" 1
-    add_menu_item "Exit" "exit_menu" "Exit the menu" 1
+
+    # Load external scripts from configuration
+    load_external_scripts
+
+    # Add basic commands only (no duplicates from plugins)
+    if [[ ${#menu_options[@]} -eq 0 ]]; then
+        add_menu_item "System Information" "cmd_system_info" "Show detailed system information" 1
+        add_menu_item "Disk Usage" "cmd_disk_usage" "Show disk space usage" 1
+        add_menu_item "Exit" "exit_menu" "Exit the menu" 1
+    fi
 }
 
 # Add menu item
@@ -271,7 +267,7 @@ display_footer() {
         # Enhanced footer with better instructions - using printf for frame, echo for colors
         printf "%s " "$frame_left"
         echo -e "Use ${selected_color}↑↓${NC} arrows or ${selected_color}numbers${NC} to navigate • ${success_color}Enter${NC} to select • ${error_color}q${NC} to quit"
-        printf "%s\n" "$frame_right"
+        printf " %s\n" "$frame_right"
     else
         echo -e "Use ${selected_color}↑↓${NC} arrows or ${selected_color}numbers${NC} to navigate • ${success_color}Enter${NC} to select • ${error_color}q${NC} to quit"
     fi
@@ -453,15 +449,27 @@ menu_loop() {
     done
 }
 
+# Load external scripts from configuration
+load_external_scripts() {
+    # Check if external scripts are defined in config
+    if [[ -n "${EXTERNAL_SCRIPTS:-}" ]]; then
+        # Parse external scripts (format: "Name|Path|Description|Level")
+        while IFS='|' read -r name path desc level; do
+            [[ -z "$name" || -z "$path" ]] && continue
+            add_menu_item "$name" "$path" "${desc:-Execute script}" "${level:-1}"
+        done <<< "$EXTERNAL_SCRIPTS"
+    fi
+}
+
 # Execute menu item
 execute_menu_item() {
     local index="$1"
-    
+
     if [[ $index -ge 0 && $index -lt ${#menu_options[@]} ]]; then
         local command="${menu_commands[$index]}"
         local option_name="${menu_options[$index]}"
         local level="${menu_levels[$index]}"
-        
+
         # Check permissions
         if [[ "${ENABLE_PERMISSIONS:-false}" == "true" ]]; then
             local user_level=$(get_user_level)
@@ -470,10 +478,18 @@ execute_menu_item() {
                 return 1
             fi
         fi
-        
+
         # Execute command
         if [[ "$command" == "exit_menu" ]]; then
             exit_menu
+        elif [[ "$command" =~ ^/ ]]; then
+            # Execute external script
+            if [[ -x "$command" ]]; then
+                echo "Executing: $command"
+                "$command"
+            else
+                print_error "Script not executable or not found: $command"
+            fi
         else
             # Execute the command function
             if declare -f "$command" > /dev/null; then

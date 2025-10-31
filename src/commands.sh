@@ -121,218 +121,20 @@ cmd_memory_usage() {
     echo ""
 
     print_separator
-    echo -e "${CYAN}🔍 Memory Details:${NC}"
-    cat /proc/meminfo | grep -E "(MemTotal|MemFree|MemAvailable|Buffers|Cached|SwapTotal|SwapFree)" | while read line; do
-        echo -e "   📈 $line"
-    done
-    echo ""
-
-    print_separator
-    echo -e "${CYAN}⚡ Top Memory Processes (Top 10):${NC}"
+    echo -e "${CYAN}⚡ Top Memory Processes (Top 8):${NC}"
     echo -e "${YELLOW}   %MEM    RSS    PID COMMAND${NC}"
-    ps aux --sort=-%mem | head -10 | tail -9 | while read user pid cpu mem vsz rss tty stat start time command; do
+    ps aux --sort=-%mem | head -8 | tail -7 | while read user pid cpu mem vsz rss tty stat start time command; do
         printf "   %5.1f %6s %5s %s\n" "$mem" "${rss}K" "$pid" "$(basename "$command")"
     done
     echo ""
 }
 
-# Running Processes Command
-cmd_running_processes() {
-    clear
-    print_header "⚙️  Running Processes"
-    echo ""
 
-    print_separator
-    echo -e "${CYAN}🚀 Top CPU Processes:${NC}"
-    echo -e "${YELLOW}   %CPU    PID COMMAND${NC}"
-    ps aux --sort=-%cpu | head -10 | tail -9 | while read user pid cpu mem vsz rss tty stat start time command; do
-        printf "   %5.1f %6s %s\n" "$cpu" "$pid" "$(basename "$command")"
-    done
-    echo ""
 
-    print_separator
-    echo -e "${CYAN}🧠 Top Memory Processes:${NC}"
-    echo -e "${YELLOW}   %MEM    PID COMMAND${NC}"
-    ps aux --sort=-%mem | head -10 | tail -9 | while read user pid cpu mem vsz rss tty stat start time command; do
-        printf "   %5.1f %6s %s\n" "$mem" "$pid" "$(basename "$command")"
-    done
-    echo ""
 
-    print_separator
-    echo -e "${CYAN}👥 Process Count by User:${NC}"
-    echo -e "${YELLOW}   Count User${NC}"
-    ps aux | awk '{print $1}' | sort | uniq -c | sort -nr | head -10 | while read count user; do
-        printf "   %5d %s\n" "$count" "$user"
-    done
-    echo ""
-}
 
-# Network Status Command
-cmd_network_status() {
-    clear
-    print_header "Network Status"
-    echo ""
-    echo -e "${CYAN}=== Network Interfaces ===${NC}"
-    ip addr show
-    echo ""
-    echo -e "${CYAN}=== Network Connections ===${NC}"
-    netstat -tuln 2>/dev/null || ss -tuln
-    echo ""
-    echo -e "${CYAN}=== Routing Table ===${NC}"
-    ip route show
-    echo ""
-    echo -e "${CYAN}=== DNS Configuration ===${NC}"
-    cat /etc/resolv.conf
-    echo ""
-}
 
-# System Load Command
-cmd_system_load() {
-    clear
-    print_header "System Load Information"
-    echo ""
-    echo -e "${CYAN}=== Current Load ===${NC}"
-    uptime
-    echo ""
-    echo -e "${CYAN}=== Load Average History ===${NC}"
-    cat /proc/loadavg
-    echo ""
-    echo -e "${CYAN}=== CPU Usage ===${NC}"
-    top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1
-    echo ""
-    echo -e "${CYAN}=== System Uptime ===${NC}"
-    uptime -p
-    echo ""
-}
 
-# User Management Command
-cmd_user_management() {
-    clear
-    print_header "User Management"
-    echo ""
-    echo -e "${CYAN}=== Currently Logged Users ===${NC}"
-    who
-    echo ""
-    echo -e "${CYAN}=== User Login History ===${NC}"
-    last | head -10
-    echo ""
-    echo -e "${CYAN}=== Failed Login Attempts ===${NC}"
-    lastb 2>/dev/null | head -5 || echo "No failed login attempts found or insufficient permissions"
-    echo ""
-    echo -e "${CYAN}=== System Users ===${NC}"
-    cat /etc/passwd | grep -E ":/bin/bash$|:/bin/sh$" | cut -d: -f1
-    echo ""
-}
-
-# Package Updates Command
-cmd_package_updates() {
-    clear
-    print_header "Package Updates"
-    echo ""
-    
-    # Check if apt is available (Debian/Ubuntu)
-    if command -v apt >/dev/null 2>&1; then
-        echo -e "${CYAN}=== APT Package Updates ===${NC}"
-        apt list --upgradable 2>/dev/null | head -20
-        echo ""
-        echo -e "${CYAN}=== APT Update Status ===${NC}"
-        apt update 2>/dev/null | tail -5
-    fi
-    
-    # Check if yum is available (RHEL/CentOS)
-    if command -v yum >/dev/null 2>&1; then
-        echo -e "${CYAN}=== YUM Package Updates ===${NC}"
-        yum check-update 2>/dev/null | head -20
-    fi
-    
-    # Check if dnf is available (Fedora)
-    if command -v dnf >/dev/null 2>&1; then
-        echo -e "${CYAN}=== DNF Package Updates ===${NC}"
-        dnf check-update 2>/dev/null | head -20
-    fi
-    
-    echo ""
-    echo -e "${CYAN}=== Package Manager Info ===${NC}"
-    echo "Available package managers:"
-    [[ -f /usr/bin/apt ]] && echo "- APT (Debian/Ubuntu)"
-    [[ -f /usr/bin/yum ]] && echo "- YUM (RHEL/CentOS)"
-    [[ -f /usr/bin/dnf ]] && echo "- DNF (Fedora)"
-    echo ""
-}
-
-# System Monitoring Command
-cmd_monitor_system() {
-    clear
-    print_header "System Monitoring"
-    echo ""
-    echo -e "${CYAN}=== Real-time System Monitor ===${NC}"
-    echo "Press Ctrl+C to exit monitoring"
-    echo ""
-    
-    # Simple monitoring loop
-    local count=0
-    while [[ $count -lt 10 ]]; do
-        echo -e "${YELLOW}--- Monitor Cycle $((count + 1)) ---${NC}"
-        echo "Time: $(date '+%H:%M:%S')"
-        echo "Load: $(uptime | awk -F'load average:' '{print $2}')"
-        echo "Memory: $(free -h | grep Mem | awk '{print $3 "/" $2}')"
-        echo "CPU: $(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1)%"
-        echo ""
-        sleep 2
-        count=$((count + 1))
-    done
-}
-
-# System Maintenance Command
-cmd_system_maintenance() {
-    clear
-    print_header "System Maintenance"
-    echo ""
-    echo -e "${CYAN}=== Maintenance Tasks ===${NC}"
-    echo "1. Clear package cache"
-    echo "2. Clean temporary files"
-    echo "3. Check disk space"
-    echo "4. Update package lists"
-    echo ""
-    
-    read -p "Select maintenance task (1-4) or press Enter to skip: " choice
-    
-    case $choice in
-        1)
-            echo -e "${GREEN}Clearing package cache...${NC}"
-            if command -v apt >/dev/null 2>&1; then
-                apt clean
-            elif command -v yum >/dev/null 2>&1; then
-                yum clean all
-            elif command -v dnf >/dev/null 2>&1; then
-                dnf clean all
-            fi
-            ;;
-        2)
-            echo -e "${GREEN}Cleaning temporary files...${NC}"
-            rm -rf /tmp/* 2>/dev/null
-            rm -rf /var/tmp/* 2>/dev/null
-            ;;
-        3)
-            echo -e "${GREEN}Checking disk space...${NC}"
-            df -h
-            ;;
-        4)
-            echo -e "${GREEN}Updating package lists...${NC}"
-            if command -v apt >/dev/null 2>&1; then
-                apt update
-            elif command -v yum >/dev/null 2>&1; then
-                yum check-update
-            elif command -v dnf >/dev/null 2>&1; then
-                dnf check-update
-            fi
-            ;;
-        *)
-            echo -e "${YELLOW}No maintenance task selected${NC}"
-            ;;
-    esac
-    echo ""
-}
 
 # Show Help Command
 cmd_show_help() {
@@ -344,17 +146,17 @@ cmd_show_help() {
     echo -e "${CYAN}📋 Available Commands:${NC}"
     echo -e "   1.  🖥️  System Information - Show detailed system information"
     echo -e "   2.  💽 Disk Usage - Show disk space usage"
-    echo -e "   3.  🧠 Memory Usage - Show memory usage"
-    echo -e "   4.  ⚙️  Running Processes - Show top running processes"
-    echo -e "   5.  🌐 Network Status - Show network connections"
-    echo -e "   6.  📈 System Load - Show system load"
-    echo -e "   7.  👥 User Management - Show logged users"
-    echo -e "   8.  📦 Package Updates - Show available updates"
-    echo -e "   9.  📊 System Monitoring - Monitor system resources"
-    echo -e "   10. 🔧 System Maintenance - Run maintenance tasks"
-    echo -e "   11. ❓ Show Help - Display help information"
-    echo -e "   12. 🚪 Exit - Exit the menu"
+    echo -e "   3.  🚪 Exit - Exit the menu"
     echo ""
+
+    #print_separator
+    #echo -e "${CYAN}🔌 Plugin Commands:${NC}"
+    #echo -e "   4.  🩺 System Health Check - Check overall system health"
+    #echo -e "   5.  ⚡ System Benchmark - Run system performance tests"
+    #echo -e "   6.  🔍 Process Analysis - Analyze running processes"
+    #echo -e "   7.  🌐 Network Analysis - Analyze network configuration"
+    #echo -e "   8.  🔒 Security Check - Basic security audit"
+    #echo ""
 
     print_separator
     echo -e "${CYAN}⌨️  Keyboard Shortcuts:${NC}"
@@ -367,10 +169,9 @@ cmd_show_help() {
 
     print_separator
     echo -e "${CYAN}💡 Navigation Tips:${NC}"
-    echo -e "   • Use ${YELLOW}numbers (1-17)${NC} to quickly select options"
+    echo -e "   • Use ${YELLOW}numbers (1-8)${NC} to quickly select options"
     echo -e "   • Use ${YELLOW}arrow keys${NC} for visual navigation"
     echo -e "   • Press ${RED}'q'${NC} to exit at any time"
-    echo -e "   • Commands show detailed system information"
     echo ""
 
     print_separator
@@ -422,14 +223,7 @@ cleanup_old_backups() {
 export -f cmd_system_info
 export -f cmd_disk_usage
 export -f cmd_memory_usage
-export -f cmd_running_processes
-export -f cmd_network_status
-export -f cmd_system_load
-export -f cmd_user_management
-export -f cmd_package_updates
-export -f cmd_monitor_system
-export -f cmd_system_maintenance
 export -f cmd_show_help
 export -f get_user_level
 export -f load_plugins
-export -f cleanup_old_backups 
+export -f cleanup_old_backups

@@ -50,9 +50,17 @@ print_header() {
     local width=58  # Total width minus borders
     local padding=$(( (width - ${#title}) / 2 ))
 
-    echo -e "${CYAN}╔$(printf '%.0s═' {1..58})╗${NC}"
-    printf "${CYAN}║${NC}%${padding}s%s%${padding}s${CYAN}║${NC}\n" "" "$title" ""
-    echo -e "${CYAN}╚$(printf '%.0s═' {1..58})╝${NC}"
+    # Check if colors are enabled
+    if [[ "${ENABLE_COLORS:-true}" == "true" ]]; then
+        echo -e "${CYAN}╔$(printf '%.0s═' {1..58})╗${NC}"
+        printf "${CYAN}║${NC}%${padding}s%s%${padding}s${CYAN}║${NC}\n" "" "$title" ""
+        echo -e "${CYAN}╚$(printf '%.0s═' {1..58})╝${NC}"
+    else
+        # Minimal version without colors or Unicode
+        echo "========================================"
+        printf "%${padding}s%s%${padding}s\n" "" "$title" ""
+        echo "========================================"
+    fi
 }
 
 print_separator() {

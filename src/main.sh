@@ -238,32 +238,50 @@ show_welcome() {
     print_header "Welcome to Bashmenu v$SCRIPT_VERSION"
     echo ""
 
-    echo -e "${GREEN}🚀 System Information:${NC}"
-    echo -e "   🖥️  Hostname: $(hostname)"
-    echo -e "   🐧 OS: $(lsb_release -d | cut -f2 2>/dev/null || echo "Unknown")"
-    echo -e "   ⚙️  Kernel: $(uname -r)"
-    echo -e "   ⏱️  Uptime: $(uptime -p | sed 's/up //')"
-    echo -e "   👤 User: $(whoami)"
-    echo ""
+    if [[ "${ENABLE_COLORS:-true}" == "true" ]]; then
+        echo -e "${GREEN}🚀 System Information:${NC}"
+        echo -e "   🖥️  Hostname: $(hostname)"
+        echo -e "   🐧 OS: $(lsb_release -d | cut -f2 2>/dev/null || echo "Unknown")"
+        echo -e "   ⚙️  Kernel: $(uname -r)"
+        echo -e "   ⏱️  Uptime: $(uptime -p | sed 's/up //')"
+        echo -e "   👤 User: $(whoami)"
+        echo ""
 
-    # System status indicators
-    if [[ "${ENABLE_PLUGINS:-true}" == "true" ]]; then
-        echo -e "${CYAN}🔌 Plugin System:${NC} ${GREEN}Enabled${NC}"
+        # System status indicators
+        if [[ "${ENABLE_PLUGINS:-true}" == "true" ]]; then
+            echo -e "${CYAN}🔌 Plugin System:${NC} ${GREEN}Enabled${NC}"
+        else
+            echo -e "${CYAN}🔌 Plugin System:${NC} ${YELLOW}Disabled${NC}"
+        fi
+
+        if [[ "${ENABLE_PERMISSIONS:-false}" == "true" ]]; then
+            echo -e "${CYAN}🔒 Permission System:${NC} ${GREEN}Enabled${NC}"
+        else
+            echo -e "${CYAN}🔒 Permission System:${NC} ${YELLOW}Disabled${NC}"
+        fi
+
+        # Show available themes
+        echo -e "${CYAN}🎨 Available Themes:${NC} default, dark, colorful, minimal, modern"
+
+        echo ""
+        echo -e "${GREEN}✨ Ready to start! Press any key to continue...${NC}"
     else
-        echo -e "${CYAN}🔌 Plugin System:${NC} ${YELLOW}Disabled${NC}"
+        echo "System Information:"
+        echo "   Hostname: $(hostname)"
+        echo "   OS: $(uname -s) $(uname -r)"
+        echo "   Kernel: $(uname -r)"
+        echo "   Uptime: $(uptime -p | sed 's/up //')"
+        echo "   User: $(whoami)"
+        echo ""
+
+        echo "Plugin System: Enabled"
+        echo "Permission System: Disabled"
+        echo "Available Themes: default, dark, colorful, minimal, modern"
+
+        echo ""
+        echo "Ready to start! Press any key to continue..."
     fi
 
-    if [[ "${ENABLE_PERMISSIONS:-false}" == "true" ]]; then
-        echo -e "${CYAN}🔒 Permission System:${NC} ${GREEN}Enabled${NC}"
-    else
-        echo -e "${CYAN}🔒 Permission System:${NC} ${YELLOW}Disabled${NC}"
-    fi
-
-    # Show available themes
-    echo -e "${CYAN}🎨 Available Themes:${NC} default, dark, colorful, minimal, modern"
-
-    echo ""
-    echo -e "${GREEN}✨ Ready to start! Press any key to continue...${NC}"
     read -s -n 1
 }
 

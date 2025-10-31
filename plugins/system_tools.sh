@@ -217,14 +217,17 @@ cmd_security_check() {
 
 # Register plugin commands with the main menu
 register_plugin_commands() {
-    # Add new menu items
-    add_menu_item "System Health Check" "cmd_system_health" "Check overall system health" 1
-    add_menu_item "System Benchmark" "cmd_system_benchmark" "Run system performance tests" 2
-    add_menu_item "Process Analysis" "cmd_process_analysis" "Analyze running processes" 1
-    add_menu_item "Network Analysis" "cmd_network_analysis" "Analyze network configuration" 2
-    add_menu_item "Security Check" "cmd_security_check" "Basic security audit" 2
-    
-    log_info "System Tools plugin commands registered"
+    # Only add plugin commands if external scripts are not loaded
+    if [[ -z "${EXTERNAL_SCRIPTS:-}" ]]; then
+        # Add new menu items
+        add_menu_item "System Health Check" "cmd_system_health" "Check overall system health" 1
+        add_menu_item "System Benchmark" "cmd_system_benchmark" "Run system performance tests" 2
+        add_menu_item "Process Analysis" "cmd_process_analysis" "Analyze running processes" 1
+        add_menu_item "Network Analysis" "cmd_network_analysis" "Analyze network configuration" 2
+        add_menu_item "Security Check" "cmd_security_check" "Basic security audit" 2
+
+        log_info "System Tools plugin commands registered"
+    fi
 }
 
 # Auto-register when plugin is loaded

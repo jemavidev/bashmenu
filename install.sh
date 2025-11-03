@@ -190,6 +190,19 @@ install_configuration() {
     local source_config="$CURRENT_DIR/config/config.conf"
     local target_config="$CONFIG_DIR/config.conf"
 
+    # Check if config.conf already exists
+    if [[ -f "$target_config" ]]; then
+        # Create backup with timestamp
+        local timestamp=$(date +%Y%m%d_%H%M%S)
+        local backup_file="${target_config}.backup.${timestamp}"
+        
+        if cp "$target_config" "$backup_file"; then
+            print_success "Backed up existing config: $backup_file"
+        else
+            print_warning "Failed to create backup of existing config"
+        fi
+    fi
+
     # Copy configuration
     if cp "$source_config" "$target_config"; then
         print_success "Installed configuration: $target_config"
@@ -232,27 +245,33 @@ install_plugins() {
         print_warning "No plugins directory found"
     fi
     
-    # Copy scripts.conf.example to config directory
+    # Always update scripts.conf.example (it's just a reference)
     local source_scripts_conf_example="$CURRENT_DIR/config/scripts.conf.example"
     local target_scripts_conf_example="$CONFIG_DIR/scripts.conf.example"
     
     if [[ -f "$source_scripts_conf_example" ]]; then
         if cp "$source_scripts_conf_example" "$target_scripts_conf_example" 2>/dev/null; then
-            print_success "Installed scripts.conf.example to: $CONFIG_DIR"
+            print_success "Updated scripts.conf.example to: $CONFIG_DIR"
         else
-            print_warning "Failed to install scripts.conf.example"
+            print_warning "Failed to update scripts.conf.example"
         fi
     fi
     
-    # Copy scripts.conf.example as scripts.conf (active configuration with examples enabled)
+    # Handle scripts.conf - preserve if exists, create if not
     local source_scripts_conf="$CURRENT_DIR/config/scripts.conf.example"
     local target_scripts_conf="$CONFIG_DIR/scripts.conf"
     
-    if [[ -f "$source_scripts_conf" ]]; then
-        if cp "$source_scripts_conf" "$target_scripts_conf" 2>/dev/null; then
-            print_success "Installed scripts.conf to: $CONFIG_DIR (with examples enabled)"
-        else
-            print_warning "Failed to install scripts.conf"
+    if [[ -f "$target_scripts_conf" ]]; then
+        # Preserve existing scripts.conf
+        print_info "Preserved existing scripts.conf (no changes made)"
+    else
+        # Create new scripts.conf from example
+        if [[ -f "$source_scripts_conf" ]]; then
+            if cp "$source_scripts_conf" "$target_scripts_conf" 2>/dev/null; then
+                print_success "Installed scripts.conf to: $CONFIG_DIR (with examples enabled)"
+            else
+                print_warning "Failed to install scripts.conf"
+            fi
         fi
     fi
 

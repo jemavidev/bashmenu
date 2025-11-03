@@ -860,7 +860,9 @@ exit_menu() {
     echo ""
     
     # Cleanup
-    cleanup_old_backups
+    if declare -f cleanup_old_backups >/dev/null; then
+        cleanup_old_backups
+    fi
     
     log_info "Bashmenu exited"
     exit 0

@@ -1,18 +1,31 @@
-# Bashmenu v2.0 - Enhanced System Administration Menu
+# Bashmenu v2.1 - Enhanced System Administration Menu
 
-[![Version](https://img.shields.io/badge/version-2.0-blue.svg)](https://github.com/jveyes/bashmenu)
+[![Version](https://img.shields.io/badge/version-2.1-blue.svg)](https://github.com/jveyes/bashmenu)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4.0+-orange.svg)](https://www.gnu.org/software/bash/)
 
-A powerful, modular, and extensible Bash script providing an interactive menu system for system administration tasks. This enhanced version includes advanced features like theming, logging, plugins, security controls, and much more.
+A powerful, modular, and extensible Bash script providing an interactive menu system for system administration tasks. This enhanced version includes advanced features like real-time dashboard, visual progress bars, theming, logging, plugins, security controls, and much more.
+
+## 🆕 What's New in v2.1
+
+- **📊 Real-Time Dashboard** - Press `d` for live system monitoring
+- **⚡ Quick Status** - Press `s` for instant health check
+- **🎨 Visual Progress Bars** - Color-coded resource indicators
+- **⌨️ Enhanced Shortcuts** - Faster navigation with new hotkeys
+- **🎯 Better UX** - Improved visual feedback throughout
+
+[See full changelog](CHANGELOG.md) | [UX Improvements Guide](UX_IMPROVEMENTS.md)
 
 ## ✨ Features
 
-### 🎨 **Visual Enhancements**
-- **Multiple Themes**: Default, Dark, Colorful, and Minimal themes
+### 🎨 **Visual Enhancements** (NEW in v2.1!)
+- **Real-Time Dashboard**: Live system monitoring with auto-refresh (Press `d`)
+- **Quick Status Check**: Instant system health overview (Press `s`)
+- **Visual Progress Bars**: Color-coded resource usage indicators
+- **Multiple Themes**: Default, Dark, Colorful, Minimal, and Modern themes
 - **Dynamic Menus**: Responsive menu with proper framing
 - **Color-coded Output**: Success, error, warning, and info messages
-- **Progress Bars**: Visual feedback for long-running operations
+- **Enhanced Feedback**: Better visual indicators throughout
 - **Timestamp Display**: Optional timestamps for all operations
 
 ### 🔧 **System Administration**
@@ -25,21 +38,28 @@ A powerful, modular, and extensible Bash script providing an interactive menu sy
 
 ### 🛡️ **Security & Permissions**
 - **Role-based Access**: User level permissions (1-3)
-- **Input Validation**: Sanitization and validation of user input
+- **Input Validation**: Comprehensive sanitization and validation
+- **Script Path Validation**: Whitelist-based directory restrictions
 - **Command Logging**: Complete audit trail of all operations
 - **Secure Execution**: Safe command execution with error handling
+- **Syntax Validation**: Pre-execution validation of all scripts and plugins
 
 ### 🔌 **Plugin System**
 - **Modular Architecture**: Easy to extend with custom plugins
 - **Auto-loading**: Automatic plugin discovery and loading
+- **Syntax Validation**: Pre-load validation prevents crashes
+- **Duplicate Prevention**: Automatic detection of duplicate menu items
+- **Error Isolation**: Plugin failures don't affect core functionality
 - **Plugin API**: Simple interface for creating new plugins
 - **Example Plugins**: System tools plugin included
 
 ### 📊 **Logging & Monitoring**
 - **Multi-level Logging**: DEBUG, INFO, WARN, ERROR levels
 - **Configurable Logging**: Customizable log files and levels
-- **Command History**: Track all executed commands
+- **Command History**: Track all executed commands with timestamps
 - **Performance Monitoring**: Built-in benchmarking tools
+- **Silent Mode**: Logs to file without cluttering terminal output
+- **Automatic Log Directory Creation**: Creates log directories as needed
 
 ### ⚙️ **Configuration Management**
 - **External Configuration**: Separate config file for easy customization
@@ -105,27 +125,88 @@ bashmenu --info
 bashmenu --config
 ```
 
+### ⌨️ Keyboard Shortcuts (NEW!)
+
+Once inside the menu:
+- **`d`** - Quick dashboard access (real-time monitoring)
+- **`s`** - Quick status check (instant health overview)
+- **`h`** - Show help
+- **`r`** - Refresh menu
+- **`q`** - Quick exit
+- **`1-9`** - Direct number selection
+- **`↑↓`** - Navigate with arrow keys
+- **`Enter`** - Select option
+
+### 📊 Quick Start Examples
+
+```bash
+# Check system health instantly
+bashmenu
+# Then press 's' for quick status
+
+# Monitor system in real-time
+bashmenu
+# Then press 'd' for dashboard
+
+# Navigate fast with numbers
+bashmenu
+# Then press '1', '2', '3', etc.
+```
+
 ## 📁 Project Structure
 
 ```
 bashmenu/
-├── bashmenu                 # Main execution script
-├── src/                     # Source code
-│   ├── main.sh             # Main entry point with CLI
-│   ├── utils.sh            # Utility functions
-│   ├── commands.sh         # Command implementations
-│   └── menu.sh             # Menu system with themes
-├── config/                  # Configuration
-│   └── config.conf         # Main configuration file
-├── plugins/                # Plugin directory
-│   └── system_tools.sh     # Example plugin
-├── tests/                  # Test suite
-│   └── test_bashmenu.sh    # Comprehensive tests
-├── docs/                   # Documentation
-├── install.sh              # Installation script
-├── README_ENHANCED.md      # Detailed documentation
-└── README.md               # This file
+├── bashmenu                        # Main execution script
+├── install.sh                      # Installation script
+├── src/                            # Source code
+│   ├── main.sh                    # Main entry point with CLI
+│   ├── utils.sh                   # Utility functions
+│   ├── commands.sh                # Command implementations
+│   ├── menu.sh                    # Menu system with themes
+│   └── logger.sh                  # Logging system
+├── config/                         # Configuration
+│   └── config.conf                # Main configuration file
+├── plugins/                        # Plugin directory
+│   └── system_tools.sh            # System tools plugin
+├── README.md                       # Main documentation
+├── CHANGELOG.md                    # Version history
+├── MEJORAS_IMPLEMENTADAS.md       # Improvements documentation (Spanish)
+├── ANTI_FLICKERING_GUIDE.md       # Anti-flickering guide
+└── PERMISSIONS_GUIDE.md            # Permissions system guide
 ```
+
+## 🔒 Security Features
+
+### Script Path Validation
+
+Bashmenu validates all external scripts before execution:
+
+- **Absolute Path Requirement**: Scripts must use absolute paths
+- **Directory Whitelist**: Only scripts in allowed directories can execute
+- **Path Sanitization**: Prevents directory traversal attacks
+- **Symbolic Link Resolution**: Validates the real path of symlinks
+
+Configure allowed directories in `config/config.conf`:
+
+```bash
+# Allowed directories for external scripts (colon-separated)
+ALLOWED_SCRIPT_DIRS="/opt/scripts:/usr/local/bin:/opt/bashmenu"
+```
+
+### Plugin Security
+
+- **Syntax Validation**: All plugins validated before loading
+- **Error Isolation**: Plugin failures don't crash the system
+- **Duplicate Prevention**: Prevents duplicate menu items
+- **Safe Loading**: Plugins loaded in isolated context
+
+### Configuration Validation
+
+- **Syntax Checking**: Config files validated before loading
+- **Value Validation**: Boolean and numeric values verified
+- **Fallback Defaults**: System continues with defaults if config fails
+- **Detailed Logging**: All validation issues logged
 
 ## ⚙️ Configuration
 
@@ -280,8 +361,8 @@ HISTORY_FILE="$HOME/.bashmenu_history.log"
    # Check if config file exists
    ls -la config/config.conf
    
-   # Create default config
-   cp config/config.conf.example config/config.conf
+   # Bashmenu will use defaults if config is missing
+   # Check logs for details: tail -f /tmp/bashmenu.log
    ```
 
 3. **Plugin Not Loading**
@@ -291,6 +372,35 @@ HISTORY_FILE="$HOME/.bashmenu_history.log"
    
    # Check plugin permissions
    chmod +x plugins/*.sh
+   
+   # Check logs for syntax errors
+   tail -f /tmp/bashmenu.log
+   ```
+
+4. **Script Validation Failed**
+   ```bash
+   # Error: "Script path not in allowed directories"
+   # Solution: Add script directory to ALLOWED_SCRIPT_DIRS in config.conf
+   
+   # Example:
+   ALLOWED_SCRIPT_DIRS="/opt/scripts:/usr/local/bin:/your/script/path"
+   ```
+
+5. **Configuration Syntax Errors**
+   ```bash
+   # Bashmenu validates config before loading
+   # Check logs for specific syntax errors
+   tail -f /tmp/bashmenu.log
+   
+   # Test config syntax manually
+   bash -n config/config.conf
+   ```
+
+6. **Theme Not Loading**
+   ```bash
+   # Bashmenu automatically falls back to default theme
+   # Check logs for theme loading issues
+   tail -f /tmp/bashmenu.log
    ```
 
 ### Debug Mode
@@ -298,12 +408,32 @@ HISTORY_FILE="$HOME/.bashmenu_history.log"
 Enable debug logging for troubleshooting:
 
 ```bash
-# Set debug level
+# Set debug level in config.conf
 LOG_LEVEL=0
 
-# Run with debug output
-bashmenu --debug
+# Enable debug output to terminal
+DEBUG_MODE=true
+
+# Run bashmenu and check logs
+bashmenu
+tail -f /tmp/bashmenu.log
 ```
+
+### Validation Errors
+
+If you encounter validation errors:
+
+1. **Plugin Syntax Errors**: Bashmenu validates plugins before loading
+   - Check the specific plugin file for syntax errors
+   - Run: `bash -n plugins/your_plugin.sh`
+
+2. **Script Path Validation**: External scripts must be in allowed directories
+   - Update `ALLOWED_SCRIPT_DIRS` in config.conf
+   - Use absolute paths for all scripts
+
+3. **Function Verification Failed**: Required functions are missing
+   - Reinstall Bashmenu: `sudo ./install.sh`
+   - Check that all source files are present
 
 ## 🤝 Contributing
 

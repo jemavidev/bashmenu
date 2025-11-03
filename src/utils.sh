@@ -47,28 +47,148 @@ print_info() {
 
 print_header() {
     local title="$1"
-    local width=58  # Total width minus borders
-    local padding=$(( (width - ${#title}) / 2 ))
+    local width=50
+    local title_length=${#title}
+    local padding=$(( (width - title_length) / 2 ))
+    local padding_right=$(( width - title_length - padding ))
 
     # Check if colors are enabled
     if [[ "${ENABLE_COLORS:-true}" == "true" ]]; then
-        echo -e "${CYAN}╔$(printf '%.0s═' {1..58})╗${NC}"
-        printf "${CYAN}║${NC}%${padding}s%s%${padding}s${CYAN}║${NC}\n" "" "$title" ""
-        echo -e "${CYAN}╚$(printf '%.0s═' {1..58})╝${NC}"
+        echo -e "${CYAN}$(printf '%.0s-' {1..50})${NC}"
+        printf "${CYAN}%${padding}s%s%${padding_right}s${NC}\n" "" "$title" ""
+        echo -e "${CYAN}$(printf '%.0s-' {1..50})${NC}"
     else
-        # Minimal version without colors or Unicode
-        echo "========================================"
-        printf "%${padding}s%s%${padding}s\n" "" "$title" ""
-        echo "========================================"
+        # Minimal version without colors
+        echo "--------------------------------------------------"
+        printf "%${padding}s%s%${padding_right}s\n" "" "$title" ""
+        echo "--------------------------------------------------"
     fi
 }
 
 print_separator() {
-    echo -e "${CYAN}┌$(printf '%.0s─' {1..58})┐${NC}"
+    if [[ "${ENABLE_COLORS:-true}" == "true" ]]; then
+        echo -e "${CYAN}$(printf '%.0s-' {1..50})${NC}"
+    else
+        echo "--------------------------------------------------"
+    fi
 }
 
 print_separator_end() {
-    echo -e "${CYAN}└$(printf '%.0s─' {1..58})┘${NC}"
+    if [[ "${ENABLE_COLORS:-true}" == "true" ]]; then
+        echo -e "${CYAN}$(printf '%.0s-' {1..50})${NC}"
+    else
+        echo "--------------------------------------------------"
+    fi
+}
+
+# Progress bar for visual feedback
+show_progress() {
+    local current=$1
+    local total=$2
+    local width=40
+    local percentage=$((current * 100 / total))
+    local completed=$((width * current / total))
+    
+    printf "\r["
+    printf "%${completed}s" | tr ' ' '█'
+    printf "%$((width - completed))s" | tr ' ' '░'
+    printf "] %d%%" $percentage
+    
+    if [[ $current -eq $total ]]; then
+        echo ""
+    fi
+}
+
+# Simple spinner for operations with anti-flickering
+show_spinner() {
+    local pid=$1
+    local message="${2:-Processing}"
+    local delay="${SPINNER_DELAY:-0.1}"
+    local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    
+    # Hide cursor to prevent flickering
+    tput civis 2>/dev/null
+    
+    # Save cursor position
+    tput sc 2>/dev/null
+    
+    while ps -p $pid > /dev/null 2>&1; do
+        local temp=${spinstr#?}
+        # Use \r to return to start of line without clearing
+        printf "\r%s %c " "$message" "$spinstr"
+        spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+    done
+    
+    # Check exit status of the process
+    wait $pid 2>/dev/null
+    local exit_code=$?
+    
+    # Clear the line and print final status
+    printf "\r\033[K"  # Clear to end of line
+    if [[ $exit_code -eq 0 ]]; then
+        printf "%s ${GREEN}✓${NC}\n" "$message"
+    else
+        printf "%s ${RED}✗${NC}\n" "$message"
+    fi
+    
+    # Show cursor
+    tput cnorm 2>/dev/null
+    
+    return $exit_code
+}
+
+# Execute command with spinner
+with_spinner() {
+    local message="$1"
+    shift
+    local command="$@"
+    
+    # Execute command in background
+    eval "$command" > /dev/null 2>&1 &
+    local pid=$!
+    
+    # Show spinner while command runs
+    show_spinner $pid "$message"
+    
+    return $?
+}
+
+# Show a simple bar (for dashboard)
+show_bar() {
+    local value=$1
+    local max=$2
+    local width=30
+    local filled=$((value * width / max))
+    
+    # Color based on value
+    local color="${GREEN}"
+    if [[ $value -gt 80 ]]; then
+        color="${RED}"
+    elif [[ $value -gt 60 ]]; then
+        color="${YELLOW}"
+    fi
+    
+    printf "${color}["
+    printf "%${filled}s" | tr ' ' '█'
+    printf "%$((width - filled))s" | tr ' ' '░'
+    printf "]${NC} %d%%\n" "$value"
+}
+
+# Confirmation prompt
+confirm() {
+    local message="$1"
+    local default="${2:-n}"
+    
+    if [[ "$default" == "y" ]]; then
+        read -p "$message [Y/n]: " response
+        response=${response:-y}
+    else
+        read -p "$message [y/N]: " response
+        response=${response:-n}
+    fi
+    
+    [[ "$response" =~ ^[Yy]$ ]]
 }
 
 # =============================================================================
@@ -79,4 +199,11 @@ export -f print_success
 export -f print_error
 export -f print_warning
 export -f print_info
-export -f print_header 
+export -f print_header
+export -f print_separator
+export -f print_separator_end
+export -f show_progress
+export -f show_spinner
+export -f with_spinner
+export -f show_bar
+export -f confirm 

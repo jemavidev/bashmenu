@@ -26,28 +26,77 @@ initialize_menu() {
     menu_descriptions=()
     menu_levels=()
 
-    # Load external scripts from configuration
-    load_external_scripts
+    if declare -f log_info >/dev/null; then
+        log_info "Initializing menu system"
+    fi
 
-    # Add basic commands only (no duplicates from plugins)
-    if [[ ${#menu_options[@]} -eq 0 ]]; then
-        add_menu_item "System Information" "cmd_system_info" "Show detailed system information" 1
-        add_menu_item "Disk Usage" "cmd_disk_usage" "Show disk space usage" 1
-        add_menu_item "Exit" "exit_menu" "Exit the menu" 1
+    # Load external scripts from configuration
+    local external_scripts_loaded=false
+    load_external_scripts
+    
+    # Check if external scripts were loaded
+    if [[ ${#menu_options[@]} -gt 0 ]]; then
+        external_scripts_loaded=true
+        if declare -f log_info >/dev/null; then
+            log_info "External scripts loaded, skipping plugin loading"
+        fi
+    fi
+
+    # Add only the 5 basic commands
+    add_menu_item "List Files (ls)" "cmd_list_files" "Show files in current directory" 1
+    add_menu_item "List Detailed (ll)" "cmd_list_detailed" "Detailed file listing" 1
+    add_menu_item "Disk Space (df)" "cmd_disk_free" "Show disk usage" 1
+    add_menu_item "Memory (free)" "cmd_memory_free" "Show memory usage" 1
+    add_menu_item "Processes (ps)" "cmd_process_list" "Show running processes" 1
+    
+    # Always add Exit as the last option
+    add_menu_item "Exit" "exit_menu" "Exit the menu" 1
+    
+    if declare -f log_info >/dev/null; then
+        log_info "Menu initialized with ${#menu_options[@]} items"
     fi
 }
 
-# Add menu item
+# Add menu item with duplicate prevention
 add_menu_item() {
     local display_name="$1"
     local command="$2"
     local description="$3"
     local level="${4:-1}"
     
+    # Check for duplicate commands
+    for i in "${!menu_commands[@]}"; do
+        if [[ "${menu_commands[$i]}" == "$command" ]]; then
+            # Command already exists, skip adding
+            if declare -f log_debug >/dev/null; then
+                log_debug "Menu item already exists, skipping: $display_name ($command)"
+            fi
+            return 1
+        fi
+    done
+    
+    # Check for duplicate display names
+    for i in "${!menu_options[@]}"; do
+        if [[ "${menu_options[$i]}" == "$display_name" ]]; then
+            # Display name already exists, skip adding
+            if declare -f log_debug >/dev/null; then
+                log_debug "Menu item with same name already exists, skipping: $display_name"
+            fi
+            return 1
+        fi
+    done
+    
+    # Add the menu item
     menu_options+=("$display_name")
     menu_commands+=("$command")
     menu_descriptions+=("$description")
     menu_levels+=("$level")
+    
+    if declare -f log_debug >/dev/null; then
+        log_debug "Menu item added: $display_name ($command)"
+    fi
+    
+    return 0
 }
 
 # =============================================================================
@@ -66,11 +115,11 @@ declare -g minimal_title_color minimal_option_color minimal_selected_color minim
 
 # Initialize themes using simple variables instead of associative arrays
 initialize_themes() {
-    # Default theme - Enhanced with better colors and spacing
-    export default_frame_top="╭─────────────────────────────────────────────────╮"
-    export default_frame_bottom="╰─────────────────────────────────────────────────╯"
-    export default_frame_left="│"
-    export default_frame_right="│"
+    # Default theme - Simple ASCII with dashes
+    export default_frame_top="--------------------------------------------------"
+    export default_frame_bottom="--------------------------------------------------"
+    export default_frame_left=""
+    export default_frame_right=""
     export default_title_color="\033[1;36m"
     export default_option_color="\033[0;37m"
     export default_selected_color="\033[1;32m"
@@ -79,11 +128,11 @@ initialize_themes() {
     export default_warning_color="\033[1;33m"
     export default_info_color="\033[0;34m"
 
-    # Dark theme - Enhanced with purple accents and better contrast
-    export dark_frame_top="┌─────────────────────────────────────────────────┐"
-    export dark_frame_bottom="└─────────────────────────────────────────────────┘"
-    export dark_frame_left="│"
-    export dark_frame_right="│"
+    # Dark theme - Dashes with purple
+    export dark_frame_top="--------------------------------------------------"
+    export dark_frame_bottom="--------------------------------------------------"
+    export dark_frame_left=""
+    export dark_frame_right=""
     export dark_title_color="\033[1;35m"
     export dark_option_color="\033[0;37m"
     export dark_selected_color="\033[1;33m"
@@ -92,11 +141,11 @@ initialize_themes() {
     export dark_warning_color="\033[1;33m"
     export dark_info_color="\033[0;34m"
 
-    # Colorful theme - Enhanced with brighter colors and double lines
-    export colorful_frame_top="╔═════════════════════════════════════════════════╗"
-    export colorful_frame_bottom="╚═════════════════════════════════════════════════╝"
-    export colorful_frame_left="║"
-    export colorful_frame_right="║"
+    # Colorful theme - Dashes with indicator
+    export colorful_frame_top="--------------------------------------------------"
+    export colorful_frame_bottom="--------------------------------------------------"
+    export colorful_frame_left=">"
+    export colorful_frame_right=""
     export colorful_title_color="\033[1;31m"
     export colorful_option_color="\033[0;36m"
     export colorful_selected_color="\033[1;33m"
@@ -105,7 +154,7 @@ initialize_themes() {
     export colorful_warning_color="\033[1;33m"
     export colorful_info_color="\033[0;34m"
 
-    # Minimal theme - Clean and simple
+    # Minimal theme - Clean and simple (no frames)
     export minimal_frame_top=""
     export minimal_frame_bottom=""
     export minimal_frame_left=""
@@ -118,11 +167,11 @@ initialize_themes() {
     export minimal_warning_color="\033[1;33m"
     export minimal_info_color="\033[0;34m"
 
-    # Modern theme - New sleek design
-    export modern_frame_top="┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
-    export modern_frame_bottom="┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
-    export modern_frame_left="┃"
-    export modern_frame_right="┃"
+    # Modern theme - Dashes for compatibility
+    export modern_frame_top="--------------------------------------------------"
+    export modern_frame_bottom="--------------------------------------------------"
+    export modern_frame_left=""
+    export modern_frame_right=""
     export modern_title_color="\033[1;38;5;51m"
     export modern_option_color="\033[0;38;5;250m"
     export modern_selected_color="\033[1;38;5;46m"
@@ -135,6 +184,11 @@ initialize_themes() {
 # Load theme
 load_theme() {
     local theme_name="${1:-default}"
+    local fallback_attempted="${2:-false}"
+    
+    if declare -f log_debug >/dev/null; then
+        log_debug "Attempting to load theme: $theme_name"
+    fi
     
     # Set theme variables using indirect expansion
     frame_top="${theme_name}_frame_top"
@@ -160,22 +214,51 @@ load_theme() {
     success_color="${!success_color}"
     warning_color="${!warning_color}"
     
-    # Use default if theme not found, but solo una vez
-    if [[ -z "$frame_top" && "$theme_name" != "default" ]]; then
-        log_warn "Theme not found: $theme_name, using default"
-        load_theme "default"
-        return
-    elif [[ -z "$frame_top" && "$theme_name" == "default" ]]; then
-        log_error "Default theme not found. Menu cannot be displayed."
-        exit 1
-    else
-        log_info "Theme loaded: $theme_name"
+    # Check if theme loaded successfully
+    if [[ -z "$frame_top" ]]; then
+        if [[ "$theme_name" != "default" && "$fallback_attempted" == "false" ]]; then
+            # Theme not found, try default
+            if declare -f log_warn >/dev/null; then
+                log_warn "Theme not found: $theme_name, falling back to default theme"
+            fi
+            print_warning "Theme '$theme_name' not found, using default theme"
+            load_theme "default" "true"
+            return $?
+        else
+            # Default theme failed or already attempted fallback
+            if declare -f log_error >/dev/null; then
+                log_error "Failed to load theme: $theme_name (default theme may be corrupted)"
+            fi
+            print_error "Critical error: Cannot load theme system"
+            print_error "Theme initialization failed. Please check installation."
+            return 1
+        fi
     fi
+    
+    # Theme loaded successfully
+    if declare -f log_info >/dev/null; then
+        log_info "Theme loaded successfully: $theme_name"
+    fi
+    
+    return 0
 }
 
 # =============================================================================
 # Display Functions
 # =============================================================================
+
+# Anti-flickering: Use buffer for display
+declare -g DISPLAY_BUFFER=""
+
+# Clear screen with anti-flickering
+clear_screen() {
+    # Use tput for better control
+    if command -v tput >/dev/null 2>&1; then
+        tput clear
+    else
+        clear
+    fi
+}
 
 # Display menu header
 display_header() {
@@ -183,28 +266,35 @@ display_header() {
     local timestamp=""
 
     if [[ "${SHOW_TIMESTAMP:-true}" == "true" ]]; then
-        timestamp="[$(date '+%H:%M:%S')]"
+        timestamp=" [$(date '+%H:%M:%S')]"
     fi
 
-    clear
+    clear_screen
 
+    # Standard width for all headers
+    local width=50
+    local title_with_timestamp="$title$timestamp"
+    local title_length=${#title_with_timestamp}
+    local padding=$(( (width - title_length) / 2 ))
+    local padding_right=$(( width - title_length - padding ))
+
+    # Top frame
     if [[ -n "$frame_top" ]]; then
-        echo -e "$frame_top"
+        echo -e "${title_color}$frame_top${NC}"
     fi
 
+    # Title centered
     if [[ -n "$frame_left" && -n "$frame_right" ]]; then
-        local width=49
-        local title_with_timestamp="$title $timestamp"
-        local padding=$(( (width - ${#title_with_timestamp}) / 2 ))
-
-        printf "%s %${padding}s%s%${padding}s %s\n" \
+        printf "${title_color}%s%${padding}s%s%${padding_right}s%s${NC}\n" \
             "$frame_left" "" "$title_with_timestamp" "" "$frame_right"
     else
-        echo -e "${title_color}$title $timestamp${NC}"
+        printf "${title_color}%${padding}s%s%${padding_right}s${NC}\n" \
+            "" "$title_with_timestamp" ""
     fi
 
+    # Bottom frame
     if [[ -n "$frame_bottom" ]]; then
-        echo -e "$frame_bottom"
+        echo -e "${title_color}$frame_bottom${NC}"
     fi
 
     echo ""
@@ -259,8 +349,8 @@ display_menu() {
 # Display footer
 display_footer() {
     echo ""
-    # Simple text footer without frame
-    echo -e "Use ${selected_color}↑↓${NC} arrows or ${selected_color}numbers${NC} to navigate • ${success_color}Enter${NC} to select • ${error_color}q${NC} to quit"
+    # Enhanced footer with more shortcuts
+    echo -e "Navigate: ${selected_color}↑↓${NC} or ${selected_color}1-9${NC} • ${success_color}Enter${NC} select • ${PURPLE}d${NC} dashboard • ${BLUE}h${NC} help • ${error_color}q${NC} quit"
 }
 
 # =============================================================================
@@ -269,32 +359,45 @@ display_footer() {
 
 # Read user input with timeout
 read_input() {
-    local timeout="${1:-30}"
+    local timeout="${INPUT_TIMEOUT:-30}"
     local choice=""
+    
+    # Check if timeout is disabled
+    if [[ "${SESSION_TIMEOUT_ENABLED:-true}" != "true" ]]; then
+        timeout=0  # No timeout
+    fi
 
     # Try to read with timeout - using -n1 for single character, -s for silent
-    if read -t "$timeout" -n1 -s choice; then
-        # Handle special keys (arrows)
-        case "$choice" in
-            $'\e')  # Escape sequence start
-                read -t 0.1 -n2 -s rest
-                case "$rest" in
-                    "[A") echo "UP" ;;
-                    "[B") echo "DOWN" ;;
-                    "[C") echo "RIGHT" ;;
-                    "[D") echo "LEFT" ;;
-                    "[H") echo "HOME" ;;
-                    "[F") echo "END" ;;
-                    "") echo "ESC" ;;
-                    *) echo "$choice$rest" ;;
-                esac
-                ;;
-            "") echo "ENTER" ;;
-            *) echo "$choice" ;;
-        esac
+    if [[ $timeout -eq 0 ]]; then
+        # No timeout - wait indefinitely
+        read -n1 -s choice
+    elif read -t "$timeout" -n1 -s choice; then
+        # Successfully read with timeout
+        :
     else
+        # Timeout occurred
         echo "timeout"
+        return
     fi
+    
+    # Handle special keys (arrows)
+    case "$choice" in
+        $'\e')  # Escape sequence start
+            read -t 0.1 -n2 -s rest
+            case "$rest" in
+                "[A") echo "UP" ;;
+                "[B") echo "DOWN" ;;
+                "[C") echo "RIGHT" ;;
+                "[D") echo "LEFT" ;;
+                "[H") echo "HOME" ;;
+                "[F") echo "END" ;;
+                "") echo "ESC" ;;
+                *) echo "$choice$rest" ;;
+            esac
+            ;;
+        "") echo "ENTER" ;;
+        *) echo "$choice" ;;
+    esac
 }
 
 # Handle keyboard input
@@ -389,6 +492,18 @@ menu_loop() {
                 log_info "Menu refreshed"
                 continue
                 ;;
+            "d"|"D")
+                # Quick dashboard access
+                cmd_dashboard
+                continue
+                ;;
+            "s"|"S")
+                # Quick status check
+                cmd_quick_status
+                echo -e "\n${success_color}Press Enter to continue...${NC}"
+                read -s -n1
+                continue
+                ;;
             "")
                 # No input, continue
                 continue
@@ -447,6 +562,170 @@ load_external_scripts() {
     fi
 }
 
+# =============================================================================
+# External Script Validation
+# =============================================================================
+
+# Sanitize script path to prevent directory traversal
+sanitize_script_path() {
+    local path="$1"
+    
+    # Remove any ../ or ./ sequences
+    path="${path//.\.\//}"
+    path="${path//.\//}"
+    
+    # Remove multiple consecutive slashes
+    path="${path//\/\//\/}"
+    
+    # Remove trailing slash
+    path="${path%/}"
+    
+    echo "$path"
+}
+
+# Validate external script path with comprehensive security checks
+validate_script_path() {
+    local script_path="$1"
+    local validation_errors=0
+    
+    if declare -f log_debug >/dev/null; then
+        log_debug "Validating script path: $script_path"
+    fi
+    
+    # Sanitize the path first
+    local sanitized_path=$(sanitize_script_path "$script_path")
+    
+    # Check if path changed after sanitization (potential attack)
+    if [[ "$script_path" != "$sanitized_path" ]]; then
+        if declare -f log_error >/dev/null; then
+            log_error "Script path contains suspicious characters: $script_path"
+        fi
+        print_error "Script path validation failed: suspicious path"
+        return 1
+    fi
+    
+    # Check if path is absolute
+    if [[ ! "$script_path" =~ ^/ ]]; then
+        if declare -f log_error >/dev/null; then
+            log_error "Script path must be absolute: $script_path"
+        fi
+        print_error "Script path must be absolute"
+        validation_errors=$((validation_errors + 1))
+    fi
+    
+    # Check if path exists
+    if [[ ! -e "$script_path" ]]; then
+        if declare -f log_error >/dev/null; then
+            log_error "Script path does not exist: $script_path"
+        fi
+        print_error "Script file not found: $script_path"
+        validation_errors=$((validation_errors + 1))
+    fi
+    
+    # Check if it's a regular file (not a directory or special file)
+    if [[ -e "$script_path" ]] && [[ ! -f "$script_path" ]]; then
+        if declare -f log_error >/dev/null; then
+            log_error "Script path is not a regular file: $script_path"
+        fi
+        print_error "Script path must be a regular file"
+        validation_errors=$((validation_errors + 1))
+    fi
+    
+    # Check if file is readable
+    if [[ -f "$script_path" ]] && [[ ! -r "$script_path" ]]; then
+        if declare -f log_error >/dev/null; then
+            log_error "Script file is not readable: $script_path"
+        fi
+        print_error "Script file is not readable"
+        validation_errors=$((validation_errors + 1))
+    fi
+    
+    # Check if executable
+    if [[ -f "$script_path" ]] && [[ ! -x "$script_path" ]]; then
+        if declare -f log_error >/dev/null; then
+            log_error "Script file is not executable: $script_path"
+        fi
+        print_error "Script file is not executable: $script_path"
+        validation_errors=$((validation_errors + 1))
+    fi
+    
+    # Check if path is a symbolic link (security consideration)
+    if [[ -L "$script_path" ]]; then
+        if declare -f log_warn >/dev/null; then
+            log_warn "Script path is a symbolic link: $script_path"
+        fi
+        
+        # Resolve the symbolic link
+        local real_path=$(readlink -f "$script_path" 2>/dev/null)
+        if [[ -z "$real_path" ]]; then
+            if declare -f log_error >/dev/null; then
+                log_error "Failed to resolve symbolic link: $script_path"
+            fi
+            print_error "Failed to resolve symbolic link"
+            validation_errors=$((validation_errors + 1))
+        else
+            if declare -f log_info >/dev/null; then
+                log_info "Symbolic link resolves to: $real_path"
+            fi
+            # Recursively validate the real path
+            script_path="$real_path"
+        fi
+    fi
+    
+    # Check if path is within allowed directories (if configured)
+    if [[ -n "${ALLOWED_SCRIPT_DIRS:-}" ]]; then
+        local is_allowed=false
+        local canonical_script_path=$(readlink -f "$script_path" 2>/dev/null || echo "$script_path")
+        
+        # Parse allowed directories (colon-separated)
+        IFS=':' read -ra allowed_dirs <<< "$ALLOWED_SCRIPT_DIRS"
+        
+        if declare -f log_debug >/dev/null; then
+            log_debug "Checking against allowed directories: ${ALLOWED_SCRIPT_DIRS}"
+        fi
+        
+        for dir in "${allowed_dirs[@]}"; do
+            # Skip empty entries
+            [[ -z "$dir" ]] && continue
+            
+            # Get canonical path of allowed directory
+            local canonical_dir=$(readlink -f "$dir" 2>/dev/null || echo "$dir")
+            
+            # Check if script is within this directory
+            if [[ "$canonical_script_path" == "$canonical_dir"* ]]; then
+                is_allowed=true
+                if declare -f log_debug >/dev/null; then
+                    log_debug "Script is within allowed directory: $canonical_dir"
+                fi
+                break
+            fi
+        done
+        
+        if [[ "$is_allowed" == "false" ]]; then
+            if declare -f log_error >/dev/null; then
+                log_error "Script path not in allowed directories: $script_path"
+            fi
+            print_error "Script path not in allowed directories"
+            print_info "Allowed directories: ${ALLOWED_SCRIPT_DIRS}"
+            validation_errors=$((validation_errors + 1))
+        fi
+    fi
+    
+    # Return validation result
+    if [[ $validation_errors -gt 0 ]]; then
+        if declare -f log_error >/dev/null; then
+            log_error "Script validation failed with $validation_errors error(s): $script_path"
+        fi
+        return 1
+    fi
+    
+    if declare -f log_info >/dev/null; then
+        log_info "Script validation passed: $script_path"
+    fi
+    
+    return 0
+}
+
 # Execute menu item
 execute_menu_item() {
     local index="$1"
@@ -461,6 +740,7 @@ execute_menu_item() {
             local user_level=$(get_user_level)
             if [[ $user_level -lt $level ]]; then
                 print_error "Access denied: $option_name requires level $level (you have level $user_level)"
+                log_warn "Access denied for user $(whoami): $option_name"
                 return 1
             fi
         fi
@@ -469,23 +749,40 @@ execute_menu_item() {
         if [[ "$command" == "exit_menu" ]]; then
             exit_menu
         elif [[ "$command" =~ ^/ ]]; then
-            # Execute external script
-            if [[ -x "$command" ]]; then
+            # Execute external script with validation and error handling
+            if validate_script_path "$command"; then
                 echo "Executing: $command"
-                "$command"
+                echo ""
+                log_command "$command" "started"
+                
+                if "$command"; then
+                    echo ""
+                    print_success "Script completed successfully"
+                    log_command "$command" "success"
+                else
+                    local exit_code=$?
+                    echo ""
+                    print_error "Script failed with exit code: $exit_code"
+                    log_command "$command" "failed (exit code: $exit_code)"
+                fi
             else
-                print_error "Script not executable or not found: $command"
+                print_error "Script validation failed: $command"
+                log_error "Script validation failed: $command"
             fi
         else
             # Execute the command function
             if declare -f "$command" > /dev/null; then
+                log_command "$command" "started"
                 $command
+                log_command "$command" "completed"
             else
                 print_error "Command not found: $command"
+                log_error "Command not found: $command"
             fi
         fi
     else
         print_error "Invalid menu index: $index"
+        log_error "Invalid menu index: $index"
     fi
 }
 
@@ -505,83 +802,6 @@ exit_menu() {
 # =============================================================================
 # Search and Filter
 # =============================================================================
-
-# Search menu items
-search_menu() {
-    local search_term="$1"
-    local filtered_indices=()
-    
-    for i in "${!menu_options[@]}"; do
-        local option="${menu_options[$i]}"
-        local description="${menu_descriptions[$i]}"
-        
-        if [[ $option =~ $search_term || $description =~ $search_term ]]; then
-            filtered_indices+=("$i")
-        fi
-    done
-    
-    echo "${filtered_indices[@]}"
-}
-
-# Display filtered menu
-display_filtered_menu() {
-    local filtered_indices=("$@")
-    local selected_index=0
-    
-    while true; do
-        clear
-        print_header "Search Results"
-        
-        if [[ ${#filtered_indices[@]} -eq 0 ]]; then
-            print_warning "No items found matching your search"
-            echo -e "\n${success_color}Press Enter to return to main menu...${NC}"
-            read -s
-            return
-        fi
-        
-        # Display filtered options
-        for i in "${!filtered_indices[@]}"; do
-            local original_index="${filtered_indices[$i]}"
-            local option="${menu_options[$original_index]}"
-            local description="${menu_descriptions[$original_index]}"
-            
-            local color="$option_color"
-            if [[ $i -eq $selected_index ]]; then
-                color="$selected_color"
-            fi
-            
-            echo -e "$color$((i+1)). $option${NC}"
-            if [[ -n "$description" ]]; then
-                echo "    $description"
-            fi
-        done
-        
-        echo ""
-        echo "Press Enter to select, 'q' to quit search"
-        
-        # Get user input
-        read -p "Choice: " choice
-        
-        case $choice in
-            "q"|"Q") return ;;
-            "")
-                if [[ $selected_index -ge 0 && $selected_index -lt ${#filtered_indices[@]} ]]; then
-                    local original_index="${filtered_indices[$selected_index]}"
-                    execute_menu_item "$original_index"
-                fi
-                ;;
-            *)
-                if validate_numeric_input "$choice" "${#filtered_indices[@]}"; then
-                    selected_index=$((choice - 1))
-                    local original_index="${filtered_indices[$selected_index]}"
-                    execute_menu_item "$original_index"
-                fi
-                ;;
-        esac
-    done
-}
-
-# =============================================================================
 # Export Functions
 # =============================================================================
 
@@ -597,9 +817,10 @@ export -f validate_numeric_input
 export -f menu_loop
 export -f execute_menu_item
 export -f exit_menu
-export -f search_menu
-export -f display_filtered_menu
 export -f initialize_themes
+export -f validate_script_path
+export -f sanitize_script_path
+export -f load_external_scripts
 
 # Fallback logging functions (if not already defined)
 if ! declare -f log_warn >/dev/null; then

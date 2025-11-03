@@ -32,7 +32,7 @@ fi
 
 readonly SCRIPT_NAME="Bashmenu"
 readonly SCRIPT_VERSION="2.0"
-readonly SCRIPT_AUTHOR="JESUS VILLALOBOS"
+readonly SCRIPT_AUTHOR="JESUS MARIA VILLALOBOS"
 
 # =============================================================================
 # Global Variables
@@ -127,30 +127,103 @@ check_requirements() {
 }
 
 # =============================================================================
+# Function Verification
+# =============================================================================
+
+verify_required_functions() {
+    print_info "Verifying required functions..."
+    
+    local missing_functions=()
+    
+    # Critical functions from utils.sh
+    local required_functions=(
+        "print_success"
+        "print_error"
+        "print_warning"
+        "print_info"
+        "print_header"
+        "show_bar"
+    )
+    
+    # Critical functions from commands.sh (new simplified commands)
+    required_functions+=(
+        "cmd_list_files"
+        "cmd_list_detailed"
+        "cmd_disk_free"
+        "cmd_memory_free"
+        "cmd_process_list"
+    )
+    
+    # Critical functions from menu.sh
+    required_functions+=(
+        "initialize_menu"
+        "add_menu_item"
+        "load_theme"
+        "menu_loop"
+        "execute_menu_item"
+    )
+    
+    # Check each required function
+    for func in "${required_functions[@]}"; do
+        if ! declare -f "$func" >/dev/null 2>&1; then
+            missing_functions+=("$func")
+        fi
+    done
+    
+    # Report results
+    if [[ ${#missing_functions[@]} -gt 0 ]]; then
+        print_error "Missing ${#missing_functions[@]} required function(s):"
+        for func in "${missing_functions[@]}"; do
+            echo "  - $func"
+        done
+        
+        if declare -f log_error >/dev/null; then
+            log_error "Function verification failed: ${missing_functions[*]}"
+        fi
+        
+        return 1
+    fi
+    
+    print_success "All required functions verified"
+    if declare -f log_info >/dev/null; then
+        log_info "Function verification passed: ${#required_functions[@]} functions checked"
+    fi
+    
+    return 0
+}
+
+# =============================================================================
 # Initialization Functions
 # =============================================================================
 
 initialize_system() {
     print_info "Initializing Bashmenu system..."
     
-    # Load configuration
-    if [[ -f "$CONFIG_FILE" ]]; then
-        source "$CONFIG_FILE"
-        print_success "Configuration loaded from $CONFIG_FILE"
-    else
-        print_warning "Configuration file not found, using defaults"
-        set_default_config
-    fi
+    # Load configuration with validation and logging
+    load_configuration
     
     # Load modules
     load_modules
+    
+    # Verify required functions are loaded
+    if ! verify_required_functions; then
+        print_error "Required functions verification failed"
+        return 1
+    fi
     
     # Initialize menu
     if declare -f initialize_menu >/dev/null; then
         initialize_menu
         print_success "Menu initialized"
+        # Log after logger is loaded
+        if declare -f log_info >/dev/null; then
+            log_info "Menu system initialized successfully"
+        fi
     else
         print_error "Menu initialization failed"
+        if declare -f log_error >/dev/null; then
+            log_error "Menu initialization failed - initialize_menu function not found"
+        fi
         return 1
     fi
     
@@ -158,49 +231,268 @@ initialize_system() {
     if declare -f load_theme >/dev/null; then
         load_theme "${DEFAULT_THEME:-default}"
         print_success "Theme loaded: ${DEFAULT_THEME:-default}"
+        if declare -f log_info >/dev/null; then
+            log_info "Theme loaded: ${DEFAULT_THEME:-default}"
+        fi
     else
         print_error "Theme loading failed"
+        if declare -f log_error >/dev/null; then
+            log_error "Theme loading failed - load_theme function not found"
+        fi
         return 1
     fi
     
     print_success "System initialization completed"
+    if declare -f log_info >/dev/null; then
+        log_info "Bashmenu system initialization completed successfully"
+    fi
+    return 0
+}
+
+# =============================================================================
+# Configuration Loading with Enhanced Validation
+# =============================================================================
+
+load_configuration() {
+    local config_loaded=false
+    
+    if [[ -f "$CONFIG_FILE" ]]; then
+        print_info "Found configuration file: $CONFIG_FILE"
+        
+        # Validate config file syntax before sourcing
+        if bash -n "$CONFIG_FILE" 2>/dev/null; then
+            # Attempt to source the configuration
+            if source "$CONFIG_FILE" 2>/dev/null; then
+                print_success "Configuration loaded from $CONFIG_FILE"
+                config_loaded=true
+                
+                # Validate critical configuration values
+                validate_config_values
+            else
+                print_error "Configuration file failed to load (runtime error)"
+                print_warning "Using default configuration"
+            fi
+        else
+            print_error "Configuration file has syntax errors"
+            print_warning "Using default configuration"
+        fi
+    else
+        print_warning "Configuration file not found: $CONFIG_FILE"
+        print_info "Using default configuration"
+    fi
+    
+    # Load defaults if configuration wasn't loaded successfully
+    if [[ "$config_loaded" == "false" ]]; then
+        set_default_config
+    fi
+    
+    return 0
+}
+
+# =============================================================================
+# Configuration Value Validation
+# =============================================================================
+
+validate_config_values() {
+    local warnings=0
+    
+    # Validate boolean values
+    if [[ -n "$ENABLE_COLORS" ]] && [[ "$ENABLE_COLORS" != "true" ]] && [[ "$ENABLE_COLORS" != "false" ]]; then
+        print_warning "Invalid ENABLE_COLORS value: $ENABLE_COLORS (using default: true)"
+        ENABLE_COLORS=true
+        warnings=$((warnings + 1))
+    fi
+    
+    if [[ -n "$AUTO_REFRESH" ]] && [[ "$AUTO_REFRESH" != "true" ]] && [[ "$AUTO_REFRESH" != "false" ]]; then
+        print_warning "Invalid AUTO_REFRESH value: $AUTO_REFRESH (using default: false)"
+        AUTO_REFRESH=false
+        warnings=$((warnings + 1))
+    fi
+    
+    if [[ -n "$SHOW_TIMESTAMP" ]] && [[ "$SHOW_TIMESTAMP" != "true" ]] && [[ "$SHOW_TIMESTAMP" != "false" ]]; then
+        print_warning "Invalid SHOW_TIMESTAMP value: $SHOW_TIMESTAMP (using default: true)"
+        SHOW_TIMESTAMP=true
+        warnings=$((warnings + 1))
+    fi
+    
+    if [[ -n "$ENABLE_PERMISSIONS" ]] && [[ "$ENABLE_PERMISSIONS" != "true" ]] && [[ "$ENABLE_PERMISSIONS" != "false" ]]; then
+        print_warning "Invalid ENABLE_PERMISSIONS value: $ENABLE_PERMISSIONS (using default: false)"
+        ENABLE_PERMISSIONS=false
+        warnings=$((warnings + 1))
+    fi
+    
+    if [[ -n "$ENABLE_PLUGINS" ]] && [[ "$ENABLE_PLUGINS" != "true" ]] && [[ "$ENABLE_PLUGINS" != "false" ]]; then
+        print_warning "Invalid ENABLE_PLUGINS value: $ENABLE_PLUGINS (using default: true)"
+        ENABLE_PLUGINS=true
+        warnings=$((warnings + 1))
+    fi
+    
+    if [[ -n "$ENABLE_HISTORY" ]] && [[ "$ENABLE_HISTORY" != "true" ]] && [[ "$ENABLE_HISTORY" != "false" ]]; then
+        print_warning "Invalid ENABLE_HISTORY value: $ENABLE_HISTORY (using default: true)"
+        ENABLE_HISTORY=true
+        warnings=$((warnings + 1))
+    fi
+    
+    # Validate numeric values
+    if [[ -n "$LOG_LEVEL" ]] && ! [[ "$LOG_LEVEL" =~ ^[0-3]$ ]]; then
+        print_warning "Invalid LOG_LEVEL value: $LOG_LEVEL (using default: 1)"
+        LOG_LEVEL=1
+        warnings=$((warnings + 1))
+    fi
+    
+    # Validate paths exist if specified
+    if [[ -n "$PLUGIN_DIR" ]] && [[ ! -d "$PLUGIN_DIR" ]]; then
+        print_warning "Plugin directory not found: $PLUGIN_DIR"
+        warnings=$((warnings + 1))
+    fi
+    
+    # Validate theme
+    local valid_themes=("default" "dark" "colorful" "minimal" "modern")
+    if [[ -n "$DEFAULT_THEME" ]]; then
+        local theme_valid=false
+        for theme in "${valid_themes[@]}"; do
+            if [[ "$DEFAULT_THEME" == "$theme" ]]; then
+                theme_valid=true
+                break
+            fi
+        done
+        if [[ "$theme_valid" == "false" ]]; then
+            print_warning "Invalid DEFAULT_THEME value: $DEFAULT_THEME (using default: default)"
+            DEFAULT_THEME="default"
+            warnings=$((warnings + 1))
+        fi
+    fi
+    
+    if [[ $warnings -gt 0 ]]; then
+        print_warning "Configuration validation found $warnings issue(s)"
+    fi
+    
     return 0
 }
 
 load_modules() {
     print_info "Loading system modules..."
     
-    # Load utilities
+    # Load logger first (with validation)
+    if [[ -f "$SCRIPT_DIR/logger.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/logger.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/logger.sh" 2>/dev/null; then
+                print_success "Logger module loaded"
+                log_info "Logger module loaded successfully"
+            else
+                print_warning "Logger module failed to load (runtime error)"
+                print_warning "Using fallback logging"
+            fi
+        else
+            print_warning "Logger module has syntax errors"
+            print_warning "Using fallback logging"
+        fi
+    else
+        print_warning "Logger module not found: $SCRIPT_DIR/logger.sh"
+        print_warning "Using fallback logging"
+    fi
+    
+    # Load utilities (critical module)
     if [[ -f "$SCRIPT_DIR/utils.sh" ]]; then
-        source "$SCRIPT_DIR/utils.sh"
-        print_success "Utils module loaded"
-    else
-        print_error "Utils module not found"
-        return 1
-    fi
-    
-    # Load commands
-    if [[ -f "$SCRIPT_DIR/commands.sh" ]]; then
-        source "$SCRIPT_DIR/commands.sh"
-        print_success "Commands module loaded"
-    else
-        print_error "Commands module not found"
-        return 1
-    fi
-    
-    # Load menu system
-    if [[ -f "$SCRIPT_DIR/menu.sh" ]]; then
-        source "$SCRIPT_DIR/menu.sh"
-        print_success "Menu module loaded"
-        
-        # Verify that themes were loaded correctly
-        if [[ -z "$default_frame_top" ]]; then
-            print_error "Themes not loaded correctly"
+        if bash -n "$SCRIPT_DIR/utils.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/utils.sh" 2>/dev/null; then
+                print_success "Utils module loaded"
+                if declare -f log_info >/dev/null; then
+                    log_info "Utils module loaded successfully"
+                fi
+            else
+                print_error "Utils module failed to load (runtime error)"
+                if declare -f log_error >/dev/null; then
+                    log_error "Utils module failed to load - runtime error"
+                fi
+                return 1
+            fi
+        else
+            print_error "Utils module has syntax errors"
+            if declare -f log_error >/dev/null; then
+                log_error "Utils module has syntax errors: $SCRIPT_DIR/utils.sh"
+            fi
             return 1
         fi
     else
-        print_error "Menu module not found"
+        print_error "Utils module not found: $SCRIPT_DIR/utils.sh"
+        if declare -f log_error >/dev/null; then
+            log_error "Utils module not found: $SCRIPT_DIR/utils.sh"
+        fi
         return 1
+    fi
+    
+    # Load commands (critical module)
+    if [[ -f "$SCRIPT_DIR/commands.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/commands.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/commands.sh" 2>/dev/null; then
+                print_success "Commands module loaded"
+                if declare -f log_info >/dev/null; then
+                    log_info "Commands module loaded successfully"
+                fi
+            else
+                print_error "Commands module failed to load (runtime error)"
+                if declare -f log_error >/dev/null; then
+                    log_error "Commands module failed to load - runtime error"
+                fi
+                return 1
+            fi
+        else
+            print_error "Commands module has syntax errors"
+            if declare -f log_error >/dev/null; then
+                log_error "Commands module has syntax errors: $SCRIPT_DIR/commands.sh"
+            fi
+            return 1
+        fi
+    else
+        print_error "Commands module not found: $SCRIPT_DIR/commands.sh"
+        if declare -f log_error >/dev/null; then
+            log_error "Commands module not found: $SCRIPT_DIR/commands.sh"
+        fi
+        return 1
+    fi
+    
+    # Load menu system (critical module)
+    if [[ -f "$SCRIPT_DIR/menu.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/menu.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/menu.sh" 2>/dev/null; then
+                print_success "Menu module loaded"
+                if declare -f log_info >/dev/null; then
+                    log_info "Menu module loaded successfully"
+                fi
+                
+                # Verify that themes were loaded correctly
+                if [[ -z "$default_frame_top" ]]; then
+                    print_error "Themes not loaded correctly"
+                    if declare -f log_error >/dev/null; then
+                        log_error "Themes not loaded correctly - default_frame_top is empty"
+                    fi
+                    return 1
+                fi
+            else
+                print_error "Menu module failed to load (runtime error)"
+                if declare -f log_error >/dev/null; then
+                    log_error "Menu module failed to load - runtime error"
+                fi
+                return 1
+            fi
+        else
+            print_error "Menu module has syntax errors"
+            if declare -f log_error >/dev/null; then
+                log_error "Menu module has syntax errors: $SCRIPT_DIR/menu.sh"
+            fi
+            return 1
+        fi
+    else
+        print_error "Menu module not found: $SCRIPT_DIR/menu.sh"
+        if declare -f log_error >/dev/null; then
+            log_error "Menu module not found: $SCRIPT_DIR/menu.sh"
+        fi
+        return 1
+    fi
+    
+    if declare -f log_info >/dev/null; then
+        log_info "All system modules loaded successfully"
     fi
     
     return 0
@@ -208,7 +500,7 @@ load_modules() {
 
 set_default_config() {
     # Set default configuration values
-    MENU_TITLE="System Administration Menu"
+    MENU_TITLE="SAM - System Administration Menu"
     ENABLE_COLORS=true
     AUTO_REFRESH=false
     SHOW_TIMESTAMP=true
@@ -247,6 +539,20 @@ show_welcome() {
         echo -e "   👤 User: $(whoami)"
         echo ""
 
+        # Quick system health
+        local cpu=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1 | cut -d'.' -f1)
+        local mem=$(free | awk 'NR==2{printf "%.0f", $3*100/$2}')
+        local disk=$(df -h / | awk 'NR==2{print $5}' | sed 's/%//')
+        
+        echo -e "${CYAN}📊 Quick Status:${NC}"
+        printf "   CPU: "
+        [[ ${cpu:-0} -lt 70 ]] && echo -e "${GREEN}${cpu}%${NC} ✓" || echo -e "${YELLOW}${cpu}%${NC} ⚠"
+        printf "   Memory: "
+        [[ ${mem:-0} -lt 70 ]] && echo -e "${GREEN}${mem}%${NC} ✓" || echo -e "${YELLOW}${mem}%${NC} ⚠"
+        printf "   Disk: "
+        [[ ${disk:-0} -lt 70 ]] && echo -e "${GREEN}${disk}%${NC} ✓" || echo -e "${YELLOW}${disk}%${NC} ⚠"
+        echo ""
+
         # System status indicators
         if [[ "${ENABLE_PLUGINS:-true}" == "true" ]]; then
             echo -e "${CYAN}🔌 Plugin System:${NC} ${GREEN}Enabled${NC}"
@@ -260,11 +566,10 @@ show_welcome() {
             echo -e "${CYAN}🔒 Permission System:${NC} ${YELLOW}Disabled${NC}"
         fi
 
-        # Show available themes
-        echo -e "${CYAN}🎨 Available Themes:${NC} default, dark, colorful, minimal, modern"
-
         echo ""
-        echo -e "${GREEN}✨ Ready to start! Press any key to continue...${NC}"
+        echo -e "${CYAN}💡 Pro Tip:${NC} Press ${PURPLE}'d'${NC} anytime for instant dashboard"
+        echo ""
+        echo -e "${GREEN}Press any key to continue...${NC}"
     else
         echo "System Information:"
         echo "   Hostname: $(hostname)"

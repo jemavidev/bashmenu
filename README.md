@@ -1,24 +1,27 @@
-# Bashmenu v2.0 - Enhanced System Administration Menu
+# Bashmenu v2.1 - Enhanced System Administration Menu
 
-[![Version](https://img.shields.io/badge/version-2.0-blue.svg)](https://github.com/jveyes/bashmenu)
+[![Version](https://img.shields.io/badge/version-2.1-blue.svg)](https://github.com/jveyes/bashmenu)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4.0+-orange.svg)](https://www.gnu.org/software/bash/)
 
-A powerful, modular, and extensible Bash script providing an interactive menu system for system administration tasks. This enhanced version includes advanced features like external scripts system, theming, logging, security controls, and comprehensive validation.
+A powerful, modular, and extensible Bash script providing an interactive menu system for system administration tasks. This enhanced version includes advanced features like real-time dashboard, quick status checks, external scripts system, theming, logging, security controls, and comprehensive validation.
 
-## 🆕 What's New in v2.0
+## 🆕 What's New in v2.1
 
-- **🔌 External Scripts System** - Simple configuration-based script integration
-- **🎨 Multiple Themes** - 5 built-in themes (default, dark, colorful, minimal, modern)
-- **📊 Comprehensive Logging** - Multi-level logging with file output
-- **🔒 Security Validation** - Path validation, syntax checking, parameter sanitization
-- **⚙️ Modular Architecture** - Clean separation of concerns with dedicated modules
+- **📊 Real-Time Dashboard** - Press `d` for live system monitoring with auto-refresh
+- **⚡ Quick Status** - Press `s` for instant health check
+- **🎨 Visual Progress Bars** - Color-coded resource indicators
+- **ℹ️ Enhanced System Info** - Visual bars for memory and disk usage
+- **⌨️ New Shortcuts** - Faster navigation with dashboard and status hotkeys
 
 [See full changelog](CHANGELOG.md)
 
 ## ✨ Features
 
-### 🎨 **Visual Features**
+### 🎨 **Visual Features** (NEW in v2.1!)
+- **Real-Time Dashboard**: Live system monitoring with auto-refresh (Press `d`)
+- **Quick Status Check**: Instant health overview (Press `s`)
+- **Visual Progress Bars**: Color-coded resource indicators
 - **Multiple Themes**: Default, Dark, Colorful, Minimal, and Modern themes
 - **Dynamic Menus**: Responsive menu with proper framing
 - **Color-coded Output**: Success, error, warning, and info messages
@@ -136,6 +139,8 @@ Once inside the menu:
 - **`1-9`** - Direct number selection
 - **`↑↓`** - Navigate with arrow keys
 - **`Enter`** - Select option
+- **`d`** - Real-time dashboard
+- **`s`** - Quick status check
 - **`r`** - Refresh menu
 - **`q`** - Quick exit
 

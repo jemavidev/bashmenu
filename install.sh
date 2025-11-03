@@ -15,7 +15,7 @@
 # =============================================================================
 
 readonly SCRIPT_NAME="Bashmenu Installer"
-readonly SCRIPT_VERSION="2.0"
+readonly SCRIPT_VERSION="2.1"
 readonly SCRIPT_AUTHOR="JESUS MARIA VILLALOBOS"
 
 # =============================================================================

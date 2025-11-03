@@ -4,8 +4,9 @@
 # Bashmenu Menu System
 # =============================================================================
 
-# Source utilities
+# Source utilities and commands
 source "$(dirname "$0")/utils.sh"
+source "$(dirname "$0")/commands.sh"
 
 # =============================================================================
 # Menu Configuration
@@ -358,7 +359,7 @@ display_menu() {
 display_footer() {
     local max_options=${#menu_options[@]}
     echo ""
-    echo -e "Navigate: ${selected_color}↑↓${NC} or ${selected_color}1-${max_options}${NC} • ${success_color}Enter${NC} select • ${BLUE}r${NC} refresh • ${error_color}q${NC} quit"
+    echo -e "Navigate: ${selected_color}↑↓${NC} or ${selected_color}1-${max_options}${NC} • ${success_color}Enter${NC} select • ${BLUE}d${NC} dashboard • ${BLUE}s${NC} status • ${BLUE}r${NC} refresh • ${error_color}q${NC} quit"
 }
 
 # =============================================================================
@@ -482,6 +483,26 @@ menu_loop() {
                 ;;
             "q"|"Q"|"quit"|"exit")
                 exit_menu
+                ;;
+            "d"|"D")
+                # Dashboard
+                if declare -f cmd_dashboard >/dev/null; then
+                    cmd_dashboard
+                else
+                    echo -e "\n${error_color}Dashboard not available${NC}"
+                    sleep 2
+                fi
+                continue
+                ;;
+            "s"|"S")
+                # Quick status
+                if declare -f cmd_quick_status >/dev/null; then
+                    cmd_quick_status
+                else
+                    echo -e "\n${error_color}Quick status not available${NC}"
+                    sleep 2
+                fi
+                continue
                 ;;
             "ENTER")
                 # Enter key pressed - execute selected item

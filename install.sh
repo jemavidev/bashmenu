@@ -109,7 +109,7 @@ check_requirements() {
     done
     
     # Check if source files exist
-    local required_files=("src/main.sh" "src/utils.sh" "src/commands.sh" "src/menu.sh" "config/config.conf" "bashmenu")
+    local required_files=("src/main.sh" "src/utils.sh" "src/menu.sh" "src/logger.sh" "src/script_loader.sh" "src/script_validator.sh" "src/script_executor.sh" "config/config.conf" "bashmenu")
     for file in "${required_files[@]}"; do
         if [[ ! -f "$CURRENT_DIR/$file" ]]; then
             print_error "Required file not found: $file"
@@ -207,19 +207,53 @@ install_plugins() {
         return 0
     fi
 
-    print_info "Installing plugins..."
+    print_info "Installing plugins and example scripts..."
 
     local source_plugin_dir="$CURRENT_DIR/plugins"
     local target_plugin_dir="$PLUGIN_DIR"
 
     if [[ -d "$source_plugin_dir" ]]; then
+        # Create examples subdirectory
+        mkdir -p "$target_plugin_dir/examples" 2>/dev/null
+        
+        # Copy all plugins
         if cp -r "$source_plugin_dir"/* "$target_plugin_dir/" 2>/dev/null; then
             print_success "Installed plugins to: $target_plugin_dir"
+            
+            # Set execute permissions on example scripts
+            if [[ -d "$target_plugin_dir/examples" ]]; then
+                chmod +x "$target_plugin_dir/examples"/*.sh 2>/dev/null
+                print_success "Set execute permissions on example scripts"
+            fi
         else
             print_warning "Failed to install plugins"
         fi
     else
         print_warning "No plugins directory found"
+    fi
+    
+    # Copy scripts.conf.example to config directory
+    local source_scripts_conf_example="$CURRENT_DIR/config/scripts.conf.example"
+    local target_scripts_conf_example="$CONFIG_DIR/scripts.conf.example"
+    
+    if [[ -f "$source_scripts_conf_example" ]]; then
+        if cp "$source_scripts_conf_example" "$target_scripts_conf_example" 2>/dev/null; then
+            print_success "Installed scripts.conf.example to: $CONFIG_DIR"
+        else
+            print_warning "Failed to install scripts.conf.example"
+        fi
+    fi
+    
+    # Copy scripts.conf.example as scripts.conf (active configuration with examples enabled)
+    local source_scripts_conf="$CURRENT_DIR/config/scripts.conf.example"
+    local target_scripts_conf="$CONFIG_DIR/scripts.conf"
+    
+    if [[ -f "$source_scripts_conf" ]]; then
+        if cp "$source_scripts_conf" "$target_scripts_conf" 2>/dev/null; then
+            print_success "Installed scripts.conf to: $CONFIG_DIR (with examples enabled)"
+        else
+            print_warning "Failed to install scripts.conf"
+        fi
     fi
 
     return 0
@@ -447,13 +481,34 @@ install() {
     echo "  Main Script: $INSTALL_DIR/bashmenu"
     echo "  Global Symlink: /usr/local/bin/bashmenu"
     echo "  Configuration: $CONFIG_DIR/config.conf"
-    echo "  Plugins: $PLUGIN_DIR/"
-    echo "  Scripts Directory: $SCRIPTS_DIR/"
+    echo "  Scripts Config: $CONFIG_DIR/scripts.conf.example"
+    echo "  Plugins Directory: $PLUGIN_DIR/"
+    echo "  Example Scripts: $PLUGIN_DIR/examples/"
     echo ""
-    echo -e "${YELLOW}Next Steps:${NC}"
-    echo "  1. Create your scripts in $SCRIPTS_DIR/"
-    echo "  2. Update $CONFIG_DIR/config.conf to add menu items"
-    echo "  3. Run 'bashmenu' to start the administration menu"
+    echo -e "${YELLOW}Next Steps - Adding Your Scripts:${NC}"
+    echo "  1. Review example scripts:"
+    echo "     ls -la $PLUGIN_DIR/examples/"
+    echo ""
+    echo "  2. Edit scripts.conf to enable example scripts or add your own:"
+    echo "     nano $CONFIG_DIR/scripts.conf"
+    echo ""
+    echo "  3. Place your custom scripts in:"
+    echo "     $PLUGIN_DIR/"
+    echo ""
+    echo "  4. Make scripts executable:"
+    echo "     chmod +x $PLUGIN_DIR/your_script.sh"
+    echo ""
+    echo "  5. Run bashmenu to see your scripts in the menu:"
+    echo "     bashmenu"
+    echo ""
+    echo -e "${CYAN}Example Scripts (Enabled by Default):${NC}"
+    echo "  • Git Status         - Show repository status"
+    echo "  • Git Pull           - Pull latest changes"
+    echo "  • Docker PS          - Show running containers"
+    echo "  • Docker Logs        - Show container logs"
+    echo ""
+    echo -e "${GREEN}Ready to use!${NC} Run 'bashmenu' to see the menu with examples."
+    echo -e "${YELLOW}Note:${NC} Edit scripts.conf to add your own scripts or disable examples."
     echo ""
 }
 

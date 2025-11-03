@@ -1,0 +1,71 @@
+# =============================================================================
+# Bashmenu External Scripts Configuration
+# =============================================================================
+# This file defines external scripts that will appear in the Bashmenu menu.
+# Scripts are loaded automatically when Bashmenu starts.
+#
+# Format: Display Name|Absolute Path|Description|Required Level|Parameters
+#
+# Fields:
+#   1. Display Name    - Text shown in the menu (max 50 characters)
+#   2. Absolute Path   - Full path to the script (must be executable)
+#   3. Description     - Brief description of what the script does (max 100 chars)
+#   4. Required Level  - Permission level: 1=user, 2=admin, 3=root
+#   5. Parameters      - Optional default parameters to pass to the script
+#
+# Rules:
+#   - Lines starting with # are comments and will be ignored
+#   - Empty lines are ignored
+#   - Scripts must have execute permissions (chmod +x script.sh)
+#   - Scripts must be in allowed directories (see ALLOWED_SCRIPT_DIRS in config.conf)
+#   - Use absolute paths only (e.g., /opt/bashmenu/plugins/myscript.sh)
+#
+# Security:
+#   - Scripts are validated before execution
+#   - Parameters are sanitized to prevent command injection
+#   - Scripts outside ALLOWED_SCRIPT_DIRS will be blocked
+#
+# =============================================================================
+
+# =============================================================================
+# Example Scripts (Uncomment to use)
+# =============================================================================
+
+# Git Operations - Manage Git repositories
+# The following examples are enabled by default. Comment them out if not needed:
+
+Git Status|/opt/bashmenu/plugins/examples/git_operations.sh|Show repository status|1|status
+Git Pull|/opt/bashmenu/plugins/examples/git_operations.sh|Pull latest changes|1|pull
+
+# More Git operations (uncomment to enable):
+# Git Log|/opt/bashmenu/plugins/examples/git_operations.sh|Show recent commits|1|log
+# Git Branch|/opt/bashmenu/plugins/examples/git_operations.sh|Show branch info|1|branch
+
+# Docker Operations - Manage Docker containers
+# The following examples are enabled by default. Comment them out if not needed:
+
+Docker PS|/opt/bashmenu/plugins/examples/docker_manager.sh|Show running containers|1|ps
+Docker Logs|/opt/bashmenu/plugins/examples/docker_manager.sh|Show container logs|1|logs
+
+# More Docker operations (uncomment to enable):
+# Docker Build|/opt/bashmenu/plugins/examples/docker_manager.sh|Build containers|2|build
+# Docker Restart|/opt/bashmenu/plugins/examples/docker_manager.sh|Restart containers|2|restart
+# Docker Images|/opt/bashmenu/plugins/examples/docker_manager.sh|List Docker images|1|images
+
+# =============================================================================
+# Your Custom Scripts
+# =============================================================================
+# Add your own scripts below using the same format.
+# 
+# Examples:
+#
+# Backup Database|/opt/bashmenu/plugins/backup_db.sh|Backup production database|2|
+# Deploy App|/opt/bashmenu/plugins/deploy.sh|Deploy application to production|3|production
+# Check Services|/opt/bashmenu/plugins/check_services.sh|Check service status|1|
+# Restart Nginx|/opt/bashmenu/plugins/restart_nginx.sh|Restart Nginx web server|2|
+# Update System|/opt/bashmenu/plugins/update_system.sh|Update system packages|3|
+#
+# =============================================================================
+
+# Add your scripts here:
+

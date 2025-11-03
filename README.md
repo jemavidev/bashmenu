@@ -1,40 +1,36 @@
-# Bashmenu v2.1 - Enhanced System Administration Menu
+# Bashmenu v2.0 - Enhanced System Administration Menu
 
-[![Version](https://img.shields.io/badge/version-2.1-blue.svg)](https://github.com/jveyes/bashmenu)
+[![Version](https://img.shields.io/badge/version-2.0-blue.svg)](https://github.com/jveyes/bashmenu)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4.0+-orange.svg)](https://www.gnu.org/software/bash/)
 
-A powerful, modular, and extensible Bash script providing an interactive menu system for system administration tasks. This enhanced version includes advanced features like real-time dashboard, visual progress bars, theming, logging, plugins, security controls, and much more.
+A powerful, modular, and extensible Bash script providing an interactive menu system for system administration tasks. This enhanced version includes advanced features like external scripts system, theming, logging, security controls, and comprehensive validation.
 
-## 🆕 What's New in v2.1
+## 🆕 What's New in v2.0
 
-- **📊 Real-Time Dashboard** - Press `d` for live system monitoring
-- **⚡ Quick Status** - Press `s` for instant health check
-- **🎨 Visual Progress Bars** - Color-coded resource indicators
-- **⌨️ Enhanced Shortcuts** - Faster navigation with new hotkeys
-- **🎯 Better UX** - Improved visual feedback throughout
+- **🔌 External Scripts System** - Simple configuration-based script integration
+- **🎨 Multiple Themes** - 5 built-in themes (default, dark, colorful, minimal, modern)
+- **📊 Comprehensive Logging** - Multi-level logging with file output
+- **🔒 Security Validation** - Path validation, syntax checking, parameter sanitization
+- **⚙️ Modular Architecture** - Clean separation of concerns with dedicated modules
 
-[See full changelog](CHANGELOG.md) | [UX Improvements Guide](UX_IMPROVEMENTS.md)
+[See full changelog](CHANGELOG.md)
 
 ## ✨ Features
 
-### 🎨 **Visual Enhancements** (NEW in v2.1!)
-- **Real-Time Dashboard**: Live system monitoring with auto-refresh (Press `d`)
-- **Quick Status Check**: Instant system health overview (Press `s`)
-- **Visual Progress Bars**: Color-coded resource usage indicators
+### 🎨 **Visual Features**
 - **Multiple Themes**: Default, Dark, Colorful, Minimal, and Modern themes
 - **Dynamic Menus**: Responsive menu with proper framing
 - **Color-coded Output**: Success, error, warning, and info messages
-- **Enhanced Feedback**: Better visual indicators throughout
 - **Timestamp Display**: Optional timestamps for all operations
+- **Clean Interface**: Professional-looking menu system
 
 ### 🔧 **System Administration**
-- **System Information**: Detailed system and hardware information
-- **Resource Monitoring**: Real-time CPU, memory, and disk monitoring
-- **Process Management**: Process analysis and management tools
-- **Network Tools**: Network status and analysis
-- **Package Management**: Support for apt, yum, and dnf
-- **System Maintenance**: Automated maintenance tasks
+- **External Scripts Integration**: Run any bash script from the menu
+- **Example Scripts Included**: Git and Docker management scripts
+- **Real-time Output**: See script execution output as it happens
+- **Parameter Support**: Interactive or default parameters for scripts
+- **Execution Logging**: Complete audit trail of all script executions
 
 ### 🛡️ **Security & Permissions**
 - **Role-based Access**: User level permissions (1-3)
@@ -44,14 +40,23 @@ A powerful, modular, and extensible Bash script providing an interactive menu sy
 - **Secure Execution**: Safe command execution with error handling
 - **Syntax Validation**: Pre-execution validation of all scripts and plugins
 
-### 🔌 **Plugin System**
+### 🔌 **External Scripts System** (NEW!)
+- **Simple Configuration**: Add scripts via easy-to-edit `scripts.conf` file
+- **Auto-loading**: Scripts automatically appear in menu on startup
+- **Security Validation**: Multi-layer validation before execution
+- **Real-time Output**: See script output as it runs with color-coded stderr
+- **Parameter Support**: Pass parameters to scripts interactively or via defaults
+- **Example Scripts**: Git and Docker management scripts included
+- **No Code Required**: Just drop your scripts and configure - no bash coding needed
+
+### 🔌 **Plugin System** (Legacy - Deprecated)
+- **Note**: The plugin system is deprecated in favor of the simpler External Scripts system
 - **Modular Architecture**: Easy to extend with custom plugins
 - **Auto-loading**: Automatic plugin discovery and loading
 - **Syntax Validation**: Pre-load validation prevents crashes
 - **Duplicate Prevention**: Automatic detection of duplicate menu items
 - **Error Isolation**: Plugin failures don't affect core functionality
 - **Plugin API**: Simple interface for creating new plugins
-- **Example Plugins**: System tools plugin included
 
 ### 📊 **Logging & Monitoring**
 - **Multi-level Logging**: DEBUG, INFO, WARN, ERROR levels
@@ -125,33 +130,14 @@ bashmenu --info
 bashmenu --config
 ```
 
-### ⌨️ Keyboard Shortcuts (NEW!)
+### ⌨️ Keyboard Shortcuts
 
 Once inside the menu:
-- **`d`** - Quick dashboard access (real-time monitoring)
-- **`s`** - Quick status check (instant health overview)
-- **`h`** - Show help
-- **`r`** - Refresh menu
-- **`q`** - Quick exit
 - **`1-9`** - Direct number selection
 - **`↑↓`** - Navigate with arrow keys
 - **`Enter`** - Select option
-
-### 📊 Quick Start Examples
-
-```bash
-# Check system health instantly
-bashmenu
-# Then press 's' for quick status
-
-# Monitor system in real-time
-bashmenu
-# Then press 'd' for dashboard
-
-# Navigate fast with numbers
-bashmenu
-# Then press '1', '2', '3', etc.
-```
+- **`r`** - Refresh menu
+- **`q`** - Quick exit
 
 ## 📁 Project Structure
 
@@ -162,18 +148,22 @@ bashmenu/
 ├── src/                            # Source code
 │   ├── main.sh                    # Main entry point with CLI
 │   ├── utils.sh                   # Utility functions
-│   ├── commands.sh                # Command implementations
 │   ├── menu.sh                    # Menu system with themes
-│   └── logger.sh                  # Logging system
+│   ├── logger.sh                  # Logging system
+│   ├── script_loader.sh           # External scripts loader
+│   ├── script_validator.sh        # Script validation & security
+│   └── script_executor.sh         # Script execution engine
 ├── config/                         # Configuration
-│   └── config.conf                # Main configuration file
-├── plugins/                        # Plugin directory
-│   └── system_tools.sh            # System tools plugin
+│   ├── config.conf                # Main configuration file
+│   └── scripts.conf.example       # External scripts config example (NEW)
+├── plugins/                        # Scripts directory
+│   └── examples/                  # Example scripts (NEW)
+│       ├── git_operations.sh      # Git management script
+│       └── docker_manager.sh      # Docker management script
 ├── README.md                       # Main documentation
 ├── CHANGELOG.md                    # Version history
-├── MEJORAS_IMPLEMENTADAS.md       # Improvements documentation (Spanish)
-├── ANTI_FLICKERING_GUIDE.md       # Anti-flickering guide
-└── PERMISSIONS_GUIDE.md            # Permissions system guide
+└── tests/                          # Test suite
+    └── test_script_system.sh      # External scripts system tests
 ```
 
 ## 🔒 Security Features
@@ -275,7 +265,276 @@ themes["custom"]=(
 )
 ```
 
-## 🔌 Plugin Development
+## 📝 External Scripts System
+
+### Overview
+
+The External Scripts system is the **recommended way** to add custom functionality to Bashmenu. It's simpler than the plugin system and requires no bash coding knowledge - just drop your scripts and configure them.
+
+**Key Differences:**
+- **External Scripts**: Simple, configuration-based, no coding required (recommended)
+- **Plugins**: Advanced, requires bash coding, for complex integrations (legacy)
+
+### Quick Start
+
+**After Installation:**
+
+Bashmenu comes with example scripts already enabled! Just run:
+```bash
+bashmenu
+```
+
+You'll see Git and Docker management scripts in the menu. These are ready to use if you have Git or Docker installed.
+
+**To Add Your Own Scripts:**
+
+1. **Create your script**:
+```bash
+# Create a simple script
+sudo nano /opt/bashmenu/plugins/my_script.sh
+```
+
+```bash
+#!/bin/bash
+echo "Hello from my script!"
+echo "Current directory: $(pwd)"
+```
+
+2. **Make it executable**:
+```bash
+sudo chmod +x /opt/bashmenu/plugins/my_script.sh
+```
+
+3. **Add to scripts.conf**:
+```bash
+sudo nano /opt/bashmenu/config/scripts.conf
+```
+
+Add this line:
+```
+My Script|/opt/bashmenu/plugins/my_script.sh|My custom script|1|
+```
+
+4. **Run Bashmenu** - your script will appear in the menu!
+
+**Note:** Make sure to configure at least one script in `scripts.conf`, otherwise the menu will be empty.
+
+### Menu Behavior
+
+Bashmenu shows only the scripts you configure:
+
+**After Fresh Installation:**
+- Shows 4 example scripts (Git Status, Git Pull, Docker PS, Docker Logs)
+- Plus the Exit option
+- Ready to use immediately!
+
+**Custom Configuration:**
+- Shows only your configured scripts from `scripts.conf`
+- Plus the Exit option
+- Complete control over your menu
+
+**Empty Configuration:**
+- If `scripts.conf` is empty, only Exit option will appear
+- Configure at least one script to populate the menu
+
+### Configuration Format
+
+The `scripts.conf` file uses a simple pipe-separated format:
+
+```
+Display Name|Absolute Path|Description|Level|Parameters
+```
+
+**Fields:**
+- **Display Name**: Text shown in menu (max 50 chars)
+- **Absolute Path**: Full path to script (must be executable)
+- **Description**: Brief description (max 100 chars)
+- **Level**: Permission level (1=user, 2=admin, 3=root)
+- **Parameters**: Optional default parameters
+
+**Example:**
+```bash
+# Git operations
+Git Pull|/opt/bashmenu/plugins/examples/git_operations.sh|Pull latest changes|1|pull
+Git Status|/opt/bashmenu/plugins/examples/git_operations.sh|Show repo status|1|status
+
+# Docker operations
+Docker PS|/opt/bashmenu/plugins/examples/docker_manager.sh|Show containers|1|ps
+Docker Build|/opt/bashmenu/plugins/examples/docker_manager.sh|Build containers|2|build
+
+# Custom scripts
+Backup DB|/opt/bashmenu/plugins/backup_db.sh|Backup database|2|
+Deploy App|/opt/bashmenu/plugins/deploy.sh|Deploy to production|3|production
+```
+
+### Example Scripts Included
+
+Bashmenu includes two example scripts that are **enabled by default** after installation:
+
+#### 1. Git Operations (`git_operations.sh`)
+Manage Git repositories with common operations:
+- `status` - Show repository status ✅ *Enabled by default*
+- `pull` - Pull latest changes from remote ✅ *Enabled by default*
+- `log` - Show recent commits
+- `branch` - Show branch information
+
+**Default configuration in scripts.conf:**
+```
+Git Status|/opt/bashmenu/plugins/examples/git_operations.sh|Show repository status|1|status
+Git Pull|/opt/bashmenu/plugins/examples/git_operations.sh|Pull latest changes|1|pull
+```
+
+#### 2. Docker Manager (`docker_manager.sh`)
+Manage Docker containers and images:
+- `ps` - Show running containers ✅ *Enabled by default*
+- `logs` - Show container logs ✅ *Enabled by default*
+- `build` - Build containers
+- `restart` - Restart containers
+- `images` - List Docker images
+
+**Default configuration in scripts.conf:**
+```
+Docker PS|/opt/bashmenu/plugins/examples/docker_manager.sh|Show containers|1|ps
+Docker Logs|/opt/bashmenu/plugins/examples/docker_manager.sh|Show container logs|1|logs
+```
+
+**Note:** These examples are automatically enabled after installation. You can comment them out in `/opt/bashmenu/config/scripts.conf` if you don't need them.
+
+### Security Features
+
+External scripts are validated before execution:
+
+1. **Path Validation**: Scripts must be in allowed directories
+2. **Permission Check**: Scripts must be executable
+3. **Syntax Validation**: Bash scripts are checked for syntax errors
+4. **Parameter Sanitization**: User input is sanitized to prevent injection
+5. **Execution Logging**: All executions are logged with timestamps
+
+**Configure allowed directories** in `config.conf`:
+```bash
+ALLOWED_SCRIPT_DIRS="/opt/bashmenu/plugins:/opt/scripts:/usr/local/bin"
+```
+
+### Advanced Features
+
+#### Interactive Parameters
+
+Scripts can prompt for parameters at runtime:
+
+```bash
+# In scripts.conf - no default parameters
+My Script|/opt/bashmenu/plugins/my_script.sh|Interactive script|1|
+
+# User will be prompted for parameters when executing
+```
+
+#### Default Parameters
+
+Provide default parameters that users can override:
+
+```bash
+# In scripts.conf - with default parameters
+Deploy|/opt/bashmenu/plugins/deploy.sh|Deploy application|2|staging
+
+# User can press Enter to use "staging" or type a different environment
+```
+
+#### Real-time Output
+
+Scripts show output in real-time with color-coded stderr:
+- Standard output (stdout) - normal color
+- Error output (stderr) - red color
+- Exit code and duration displayed after completion
+
+#### Execution Timeout
+
+Configure maximum execution time in `config.conf`:
+```bash
+SCRIPT_EXECUTION_TIMEOUT=300  # 5 minutes
+```
+
+### Creating Your Own Scripts
+
+**Best Practices:**
+
+1. **Use absolute paths** in scripts.conf
+2. **Add shebang** at the top: `#!/bin/bash`
+3. **Make executable**: `chmod +x script.sh`
+4. **Add description** as comment on line 2
+5. **Handle errors** with proper exit codes
+6. **Validate inputs** before processing
+7. **Provide usage** information
+
+**Example Script Template:**
+```bash
+#!/bin/bash
+# My Custom Script - Does something useful
+
+# Configuration
+SETTING="value"
+
+# Functions
+show_usage() {
+    echo "Usage: $0 [option]"
+    echo "Options:"
+    echo "  start  - Start the service"
+    echo "  stop   - Stop the service"
+}
+
+# Main
+main() {
+    local action="${1:-start}"
+    
+    case "$action" in
+        start)
+            echo "Starting service..."
+            # Your code here
+            ;;
+        stop)
+            echo "Stopping service..."
+            # Your code here
+            ;;
+        *)
+            show_usage
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
+```
+
+### Troubleshooting
+
+**Empty menu (only Exit option):**
+- This means `scripts.conf` is empty or all entries are commented
+- Edit `/opt/bashmenu/config/scripts.conf` and uncomment example scripts
+- Or add your own scripts to the configuration
+
+**Script not appearing in menu:**
+- Check that scripts.conf exists and is readable
+- Verify script path is absolute (starts with `/`)
+- Ensure script is in ALLOWED_SCRIPT_DIRS
+- Check logs: `tail -f /tmp/bashmenu.log`
+- Verify the script file exists: `ls -la /path/to/script.sh`
+
+**Permission denied:**
+- Make script executable: `chmod +x script.sh`
+- Check file ownership: `ls -l script.sh`
+- Verify ALLOWED_SCRIPT_DIRS includes script location
+
+**Script fails to execute:**
+- Test script manually: `bash -n script.sh` (syntax check)
+- Run script directly: `./script.sh` (test execution)
+- Check script logs and error messages
+- Verify all dependencies are installed (git, docker, etc.)
+
+**Example scripts not working:**
+- Git scripts require git to be installed: `sudo apt install git`
+- Docker scripts require docker to be installed: `curl -fsSL https://get.docker.com | sh`
+- Check that you're in a git repository when using git scripts
+
+## 🔌 Plugin Development (Legacy)
 
 ### Creating a Plugin
 

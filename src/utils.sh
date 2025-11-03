@@ -18,11 +18,23 @@ BOLD_BLUE='\033[1;34m'
 export RED GREEN YELLOW BLUE PURPLE CYAN WHITE NC
 export BOLD_RED BOLD_GREEN BOLD_YELLOW BOLD_BLUE 
 
-# Logging functions
-log_warn() { echo -e "[WARN] $*" >&2; }
-log_info() { echo -e "[INFO] $*" >&2; }
-log_error() { echo -e "[ERROR] $*" >&2; }
-log_debug() { echo -e "[DEBUG] $*" >&2; }
+# Logging functions (fallback - will be overridden by logger.sh if loaded)
+log_warn() { 
+    [[ "${DEBUG_MODE:-false}" == "true" ]] && echo -e "[WARN] $*" >&2
+    return 0
+}
+log_info() { 
+    [[ "${DEBUG_MODE:-false}" == "true" ]] && echo -e "[INFO] $*" >&2
+    return 0
+}
+log_error() { 
+    [[ "${DEBUG_MODE:-false}" == "true" ]] && echo -e "[ERROR] $*" >&2
+    return 0
+}
+log_debug() { 
+    [[ "${DEBUG_MODE:-false}" == "true" ]] && echo -e "[DEBUG] $*" >&2
+    return 0
+}
 
 # =============================================================================
 # Utility Functions
@@ -191,6 +203,17 @@ confirm() {
     [[ "$response" =~ ^[Yy]$ ]]
 }
 
+# Get user level for permissions
+get_user_level() {
+    if [[ "$(whoami)" == "root" ]]; then
+        echo "3"
+    elif [[ "$(whoami)" == "admin" ]]; then
+        echo "2"
+    else
+        echo "1"
+    fi
+}
+
 # =============================================================================
 # Export Functions
 # =============================================================================
@@ -206,4 +229,5 @@ export -f show_progress
 export -f show_spinner
 export -f with_spinner
 export -f show_bar
-export -f confirm 
+export -f confirm
+export -f get_user_level 

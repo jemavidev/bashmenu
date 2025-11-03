@@ -109,7 +109,7 @@ check_requirements() {
     done
     
     # Check if source files exist
-    local required_files=("utils.sh" "commands.sh" "menu.sh")
+    local required_files=("utils.sh" "menu.sh")
     for file in "${required_files[@]}"; do
         if [[ ! -f "$SCRIPT_DIR/$file" ]]; then
             print_error "Required file not found: $file"
@@ -145,14 +145,7 @@ verify_required_functions() {
         "show_bar"
     )
     
-    # Critical functions from commands.sh (new simplified commands)
-    required_functions+=(
-        "cmd_list_files"
-        "cmd_list_detailed"
-        "cmd_disk_free"
-        "cmd_memory_free"
-        "cmd_process_list"
-    )
+
     
     # Critical functions from menu.sh
     required_functions+=(
@@ -367,6 +360,19 @@ validate_config_values() {
         print_warning "Configuration validation found $warnings issue(s)"
     fi
     
+    # Force DEBUG_MODE based on LOG_LEVEL
+    # If LOG_LEVEL is 3 (ERROR only), disable debug mode
+    if [[ "${LOG_LEVEL:-1}" -eq 3 ]]; then
+        DEBUG_MODE=false
+        export DEBUG_MODE
+    fi
+    
+    # Ensure DEBUG_MODE has a default value
+    if [[ -z "${DEBUG_MODE}" ]]; then
+        DEBUG_MODE=false
+        export DEBUG_MODE
+    fi
+    
     return 0
 }
 
@@ -390,6 +396,54 @@ load_modules() {
     else
         print_warning "Logger module not found: $SCRIPT_DIR/logger.sh"
         print_warning "Using fallback logging"
+    fi
+    
+    # Load script loader module
+    if [[ -f "$SCRIPT_DIR/script_loader.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/script_loader.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/script_loader.sh" 2>/dev/null; then
+                print_success "Script loader module loaded"
+                if declare -f log_info >/dev/null; then
+                    log_info "Script loader module loaded successfully"
+                fi
+            else
+                print_warning "Script loader module failed to load (runtime error)"
+            fi
+        else
+            print_warning "Script loader module has syntax errors"
+        fi
+    fi
+    
+    # Load script validator module
+    if [[ -f "$SCRIPT_DIR/script_validator.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/script_validator.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/script_validator.sh" 2>/dev/null; then
+                print_success "Script validator module loaded"
+                if declare -f log_info >/dev/null; then
+                    log_info "Script validator module loaded successfully"
+                fi
+            else
+                print_warning "Script validator module failed to load (runtime error)"
+            fi
+        else
+            print_warning "Script validator module has syntax errors"
+        fi
+    fi
+    
+    # Load script executor module
+    if [[ -f "$SCRIPT_DIR/script_executor.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/script_executor.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/script_executor.sh" 2>/dev/null; then
+                print_success "Script executor module loaded"
+                if declare -f log_info >/dev/null; then
+                    log_info "Script executor module loaded successfully"
+                fi
+            else
+                print_warning "Script executor module failed to load (runtime error)"
+            fi
+        else
+            print_warning "Script executor module has syntax errors"
+        fi
     fi
     
     # Load utilities (critical module)
@@ -422,36 +476,7 @@ load_modules() {
         return 1
     fi
     
-    # Load commands (critical module)
-    if [[ -f "$SCRIPT_DIR/commands.sh" ]]; then
-        if bash -n "$SCRIPT_DIR/commands.sh" 2>/dev/null; then
-            if source "$SCRIPT_DIR/commands.sh" 2>/dev/null; then
-                print_success "Commands module loaded"
-                if declare -f log_info >/dev/null; then
-                    log_info "Commands module loaded successfully"
-                fi
-            else
-                print_error "Commands module failed to load (runtime error)"
-                if declare -f log_error >/dev/null; then
-                    log_error "Commands module failed to load - runtime error"
-                fi
-                return 1
-            fi
-        else
-            print_error "Commands module has syntax errors"
-            if declare -f log_error >/dev/null; then
-                log_error "Commands module has syntax errors: $SCRIPT_DIR/commands.sh"
-            fi
-            return 1
-        fi
-    else
-        print_error "Commands module not found: $SCRIPT_DIR/commands.sh"
-        if declare -f log_error >/dev/null; then
-            log_error "Commands module not found: $SCRIPT_DIR/commands.sh"
-        fi
-        return 1
-    fi
-    
+
     # Load menu system (critical module)
     if [[ -f "$SCRIPT_DIR/menu.sh" ]]; then
         if bash -n "$SCRIPT_DIR/menu.sh" 2>/dev/null; then

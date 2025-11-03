@@ -8,8 +8,9 @@
 # Author:      JESUS VILLALOBOS (Enhanced with AI assistance)
 # =============================================================================
 
-# Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the real directory where this script is located (follows symlinks)
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
 # Execute the main script
 exec "$SCRIPT_DIR/src/main.sh" "$@" 

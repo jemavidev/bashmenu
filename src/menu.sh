@@ -4,9 +4,8 @@
 # Bashmenu Menu System
 # =============================================================================
 
-# Source utilities and commands
+# Source utilities
 source "$(dirname "$0")/utils.sh"
-source "$(dirname "$0")/commands.sh"
 
 # =============================================================================
 # Menu Configuration
@@ -30,24 +29,33 @@ initialize_menu() {
         log_info "Initializing menu system"
     fi
 
-    # Load external scripts from configuration
-    local external_scripts_loaded=false
-    load_external_scripts
+    # Load external scripts from scripts.conf
+    local scripts_config="${CONFIG_DIR:-$PROJECT_ROOT/config}/scripts.conf"
     
-    # Check if external scripts were loaded
-    if [[ ${#menu_options[@]} -gt 0 ]]; then
-        external_scripts_loaded=true
+    if [[ -f "$scripts_config" ]]; then
         if declare -f log_info >/dev/null; then
-            log_info "External scripts loaded, skipping plugin loading"
+            log_info "Loading external scripts from: $scripts_config"
         fi
+        
+        # Load script configuration
+        if declare -f load_script_config >/dev/null; then
+            load_script_config "$scripts_config"
+            
+            # Register external scripts as menu items
+            if declare -f register_external_scripts >/dev/null; then
+                register_external_scripts
+            fi
+            
+            if declare -f log_info >/dev/null; then
+                log_info "External scripts loaded: ${#SCRIPT_ENTRIES[@]}"
+            fi
+        fi
+    else
+        if declare -f log_warn >/dev/null; then
+            log_warn "No scripts.conf found at: $scripts_config"
+        fi
+        print_warning "No scripts.conf found. Please create one to add menu items."
     fi
-
-    # Add only the 5 basic commands
-    add_menu_item "List Files (ls)" "cmd_list_files" "Show files in current directory" 1
-    add_menu_item "List Detailed (ll)" "cmd_list_detailed" "Detailed file listing" 1
-    add_menu_item "Disk Space (df)" "cmd_disk_free" "Show disk usage" 1
-    add_menu_item "Memory (free)" "cmd_memory_free" "Show memory usage" 1
-    add_menu_item "Processes (ps)" "cmd_process_list" "Show running processes" 1
     
     # Always add Exit as the last option
     add_menu_item "Exit" "exit_menu" "Exit the menu" 1
@@ -348,9 +356,9 @@ display_menu() {
 
 # Display footer
 display_footer() {
+    local max_options=${#menu_options[@]}
     echo ""
-    # Enhanced footer with more shortcuts
-    echo -e "Navigate: ${selected_color}↑↓${NC} or ${selected_color}1-9${NC} • ${success_color}Enter${NC} select • ${PURPLE}d${NC} dashboard • ${BLUE}h${NC} help • ${error_color}q${NC} quit"
+    echo -e "Navigate: ${selected_color}↑↓${NC} or ${selected_color}1-${max_options}${NC} • ${success_color}Enter${NC} select • ${BLUE}r${NC} refresh • ${error_color}q${NC} quit"
 }
 
 # =============================================================================
@@ -455,9 +463,6 @@ menu_loop() {
     local selected_index=0
     local max_selection=${#menu_options[@]}
     
-    # Load plugins
-    load_plugins
-    
     while true; do
         # Display menu
         display_header
@@ -482,26 +487,8 @@ menu_loop() {
                 # Enter key pressed - execute selected item
                 execute_menu_item "$selected_index"
                 ;;
-            "h"|"H"|"help")
-                cmd_show_help
-                echo -e "\n${success_color}Press Enter to continue...${NC}"
-                read -s -n1
-                continue
-                ;;
             "r"|"R"|"refresh")
-                log_info "Menu refreshed"
-                continue
-                ;;
-            "d"|"D")
-                # Quick dashboard access
-                cmd_dashboard
-                continue
-                ;;
-            "s"|"S")
-                # Quick status check
-                cmd_quick_status
-                echo -e "\n${success_color}Press Enter to continue...${NC}"
-                read -s -n1
+                # Refresh menu
                 continue
                 ;;
             "")
@@ -514,19 +501,9 @@ menu_loop() {
         if [[ "$choice" =~ ^[0-9]+$ ]] && validate_numeric_input "$choice" "$max_selection"; then
             selected_index=$((choice - 1))
             execute_menu_item "$selected_index"
-            # Wait for user to continue after executing a command
-            if [[ "${AUTO_REFRESH:-false}" != "true" ]]; then
-                echo -e "\n${success_color}Press Enter to continue...${NC}"
-                read -s -n1
-            fi
         elif [[ "$choice" == "ENTER" ]]; then
             # Enter key pressed - execute selected item
             execute_menu_item "$selected_index"
-            # Wait for user to continue after executing a command
-            if [[ "${AUTO_REFRESH:-false}" != "true" ]]; then
-                echo -e "\n${success_color}Press Enter to continue...${NC}"
-                read -s -n1
-            fi
         else
             # Handle arrow keys and other navigation
             local new_selection
@@ -550,17 +527,82 @@ menu_loop() {
     done
 }
 
-# Load external scripts from configuration
-load_external_scripts() {
-    # Check if external scripts are defined in config
-    if [[ -n "${EXTERNAL_SCRIPTS:-}" ]]; then
-        # Parse external scripts (format: "Name|Path|Description|Level")
-        while IFS='|' read -r name path desc level; do
-            [[ -z "$name" || -z "$path" ]] && continue
-            add_menu_item "$name" "$path" "${desc:-Execute script}" "${level:-1}"
-        done <<< "$EXTERNAL_SCRIPTS"
+# Registra scripts externos como entradas de menú
+register_external_scripts() {
+    if [[ ${#SCRIPT_ENTRIES[@]} -eq 0 ]]; then
+        if declare -f log_debug >/dev/null; then
+            log_debug "No external scripts to register"
+        fi
+        return 0
+    fi
+    
+    if declare -f log_info >/dev/null; then
+        log_info "Registering ${#SCRIPT_ENTRIES[@]} external script(s)"
+    fi
+    
+    local registered_count=0
+    
+    for script_name in "${!SCRIPT_ENTRIES[@]}"; do
+        local entry="${SCRIPT_ENTRIES[$script_name]}"
+        IFS='|' read -r path desc level params <<< "$entry"
+        
+        # Crear función wrapper para cada script
+        create_script_wrapper "$script_name" "$path" "$params"
+        
+        # Agregar al menú
+        local wrapper_func="exec_${script_name//[^a-zA-Z0-9_]/_}"
+        if add_menu_item "$script_name" "$wrapper_func" "$desc" "$level"; then
+            registered_count=$((registered_count + 1))
+            if declare -f log_debug >/dev/null; then
+                log_debug "Registered script: $script_name -> $wrapper_func"
+            fi
+        fi
+    done
+    
+    if declare -f log_info >/dev/null; then
+        log_info "Registered $registered_count external script(s) in menu"
+    fi
+    
+    print_success "Registered $registered_count external script(s)"
+    
+    return 0
+}
+
+# Crea función wrapper dinámica para cada script
+create_script_wrapper() {
+    local name="$1"
+    local path="$2"
+    local default_params="$3"
+    
+    # Sanitizar nombre para crear función válida
+    local func_name="exec_${name//[^a-zA-Z0-9_]/_}"
+    
+    # Crear función dinámica usando eval
+    # La función llama a execute_script con los parámetros correctos
+    eval "${func_name}() {
+        if declare -f execute_script >/dev/null; then
+            execute_script '$path' '$name' '$default_params'
+        else
+            print_error 'Script executor not available'
+            if declare -f log_error >/dev/null; then
+                log_error 'execute_script function not found'
+            fi
+            echo ''
+            echo -e '\${success_color}Press Enter to continue...\${NC}'
+            read -s
+            return 1
+        fi
+    }"
+    
+    # Exportar la función para que esté disponible
+    export -f "$func_name"
+    
+    if declare -f log_debug >/dev/null; then
+        log_debug "Created wrapper function: $func_name for script: $name"
     fi
 }
+
+
 
 # =============================================================================
 # External Script Validation
@@ -820,20 +862,34 @@ export -f exit_menu
 export -f initialize_themes
 export -f validate_script_path
 export -f sanitize_script_path
-export -f load_external_scripts
+export -f register_external_scripts
+export -f create_script_wrapper
 
 # Fallback logging functions (if not already defined)
+# These respect DEBUG_MODE to avoid unwanted output
 if ! declare -f log_warn >/dev/null; then
-  log_warn() { echo -e "[WARN] $*" >&2; }
+  log_warn() { 
+    [[ "${DEBUG_MODE:-false}" == "true" ]] && echo -e "[WARN] $*" >&2
+    return 0
+  }
 fi
 if ! declare -f log_info >/dev/null; then
-  log_info() { echo -e "[INFO] $*" >&2; }
+  log_info() { 
+    [[ "${DEBUG_MODE:-false}" == "true" ]] && echo -e "[INFO] $*" >&2
+    return 0
+  }
 fi
 if ! declare -f log_error >/dev/null; then
-  log_error() { echo -e "[ERROR] $*" >&2; }
+  log_error() { 
+    [[ "${DEBUG_MODE:-false}" == "true" ]] && echo -e "[ERROR] $*" >&2
+    return 0
+  }
 fi
 if ! declare -f log_debug >/dev/null; then
-  log_debug() { echo -e "[DEBUG] $*" >&2; }
+  log_debug() { 
+    [[ "${DEBUG_MODE:-false}" == "true" ]] && echo -e "[DEBUG] $*" >&2
+    return 0
+  }
 fi
 
 # Initialize themes when this file is sourced

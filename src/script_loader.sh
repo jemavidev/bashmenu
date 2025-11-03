@@ -1,10 +1,11 @@
 #!/bin/bash
 
 # =============================================================================
-# Script Loader Module for Bashmenu
+# Módulo Cargador de Scripts para Bashmenu
 # =============================================================================
-# Description: Loads and parses external script configuration
-# Version:     1.0
+# Descripción: Carga y analiza configuración de scripts externos
+# Versión:     2.1
+# Autor:       JESUS MARIA VILLALOBOS
 # =============================================================================
 
 # =============================================================================

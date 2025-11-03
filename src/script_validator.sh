@@ -1,10 +1,11 @@
 #!/bin/bash
 
 # =============================================================================
-# Script Validator Module for Bashmenu
+# Módulo Validador de Scripts para Bashmenu
 # =============================================================================
-# Description: Validates scripts before execution for security and integrity
-# Version:     1.0
+# Descripción: Valida scripts antes de ejecución por seguridad e integridad
+# Versión:     2.1
+# Autor:       JESUS MARIA VILLALOBOS
 # =============================================================================
 
 # =============================================================================

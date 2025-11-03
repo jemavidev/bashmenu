@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # =============================================================================
-# Bashmenu - Enhanced System Administration Menu
+# Bashmenu - Sistema de Menú Interactivo para Administración
 # =============================================================================
-# Description: Main entry point for the enhanced Bashmenu system
-# Version:     2.0
-# Author:      JESUS VILLALOBOS (Enhanced with AI assistance)
+# Descripción: Punto de entrada principal del sistema Bashmenu
+# Versión:     2.1
+# Autor:       JESUS MARIA VILLALOBOS
 # =============================================================================
 
 # =============================================================================

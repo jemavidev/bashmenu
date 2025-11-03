@@ -1,7 +1,11 @@
 #!/bin/bash
 
 # =============================================================================
-# Bashmenu Menu System
+# Sistema de Menú para Bashmenu
+# =============================================================================
+# Descripción: Sistema de menú interactivo con soporte de temas
+# Versión:     2.1
+# Autor:       JESUS MARIA VILLALOBOS
 # =============================================================================
 
 # Source utilities and commands

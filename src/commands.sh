@@ -1,10 +1,11 @@
 #!/bin/bash
 
 # =============================================================================
-# Command Functions for Bashmenu
+# Funciones de Comandos para Bashmenu
 # =============================================================================
-# Description: System administration commands and utilities
-# Version:     2.1
+# Descripción: Comandos y utilidades de administración del sistema
+# Versión:     2.1
+# Autor:       JESUS MARIA VILLALOBOS
 # =============================================================================
 
 # =============================================================================

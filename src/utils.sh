@@ -1,3 +1,13 @@
+#!/bin/bash
+
+# =============================================================================
+# Funciones Utilitarias para Bashmenu
+# =============================================================================
+# Descripción: Funciones de utilidad y helpers del sistema
+# Versión:     2.1
+# Autor:       JESUS MARIA VILLALOBOS
+# =============================================================================
+
 # Color definitions
 RED='\033[0;31m'
 GREEN='\033[0;32m'

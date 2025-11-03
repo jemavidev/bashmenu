@@ -2,7 +2,7 @@
 # Bashmenu .gitignore
 # =============================================================================
 
-# IDE and Editor files
+# IDE y archivos de editor
 .kiro/
 .vscode/
 .idea/
@@ -11,33 +11,28 @@
 *~
 .DS_Store
 
-# Test directories
-test/
-tests/tmp/
-tests/output/
-
-# Log files
+# Archivos de log
 *.log
 logs/
 /tmp/
 
-# Backup files
+# Archivos de respaldo
 *.bak
 *.backup
 *.old
 *~
 
-# Configuration backups
+# Respaldos de configuración
 config/*.bak
 config/*.backup
 *.conf.bak
 
-# Temporary files
+# Archivos temporales
 tmp/
 temp/
 *.tmp
 
-# OS generated files
+# Archivos generados por el SO
 .DS_Store
 .DS_Store?
 ._*
@@ -46,49 +41,51 @@ temp/
 ehthumbs.db
 Thumbs.db
 
-# Runtime files
+# Archivos de runtime
 *.pid
 *.sock
 
-# History files
+# Archivos de historial
 .bash_history
 .bashmenu_history.log
 
-# Local development
+# Desarrollo local
 local/
 dev/
 sandbox/
+test/
+tests/
 
-# Package manager files
+# Gestores de paquetes
 node_modules/
 vendor/
 
-# Compiled files
+# Archivos compilados
 *.o
 *.so
 *.dylib
 
-# Archives
+# Archivos comprimidos
 *.zip
 *.tar
 *.tar.gz
 *.tgz
 *.rar
 
-# Documentation build files
+# Documentación de desarrollo
 docs/_build/
 site/
 
-# Coverage reports
+# Reportes de cobertura
 coverage/
 .coverage
 
-# Environment files
+# Archivos de entorno
 .env
 .env.local
 .env.*.local
 
-# Personal notes
+# Notas personales
 TODO.md
 NOTES.md
 notes/

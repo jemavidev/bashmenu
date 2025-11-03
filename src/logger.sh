@@ -1,10 +1,11 @@
 #!/bin/bash
 
 # =============================================================================
-# Logging System for Bashmenu
+# Sistema de Registro para Bashmenu
 # =============================================================================
-# Description: Comprehensive logging system with multiple levels and file output
-# Version:     1.0
+# Descripción: Sistema de registro completo con múltiples niveles
+# Versión:     2.1
+# Autor:       JESUS MARIA VILLALOBOS
 # =============================================================================
 
 # =============================================================================

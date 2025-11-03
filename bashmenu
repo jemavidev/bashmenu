@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # =============================================================================
-# Bashmenu - Enhanced System Administration Menu
+# Bashmenu - Sistema de Menú Interactivo para Administración
 # =============================================================================
-# Description: Main execution script for Bashmenu
-# Version:     2.0
-# Author:      JESUS VILLALOBOS (Enhanced with AI assistance)
+# Descripción: Script principal de ejecución para Bashmenu
+# Versión:     2.1
+# Autor:       JESUS MARIA VILLALOBOS
 # =============================================================================
 
 # Get the real directory where this script is located (follows symlinks)

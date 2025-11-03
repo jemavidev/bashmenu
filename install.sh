@@ -1,13 +1,13 @@
 #!/bin/bash
 
 ################################################################################
-# Bashmenu Installation Script
+# Script de Instalación de Bashmenu
 # ==============================================================================
-# Description: Installs and configures the enhanced Bashmenu system
-# Date:        January 15, 2024
-# Creator:     JESUS VILLALOBOS (Enhanced with AI assistance)
-# Version:     2.0
-# License:     MIT License
+# Descripción: Instala y configura el sistema Bashmenu
+# Fecha:       Noviembre 2, 2024
+# Autor:       JESUS MARIA VILLALOBOS
+# Versión:     2.1
+# Licencia:    MIT License
 ################################################################################
 
 # =============================================================================

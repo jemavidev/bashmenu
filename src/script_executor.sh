@@ -1,10 +1,11 @@
 #!/bin/bash
 
 # =============================================================================
-# Script Executor Module for Bashmenu
+# Módulo Ejecutor de Scripts para Bashmenu
 # =============================================================================
-# Description: Executes external scripts safely with real-time output
-# Version:     1.0
+# Descripción: Ejecuta scripts externos de forma segura con salida en tiempo real
+# Versión:     2.1
+# Autor:       JESUS MARIA VILLALOBOS
 # =============================================================================
 
 # =============================================================================

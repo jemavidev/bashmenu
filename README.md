@@ -23,11 +23,12 @@ An interactive and modular menu system for Linux system administration. Designed
 - **Parameter Support**: Interactive or default parameters
 - **Example Scripts**: Includes Git and Docker examples
 
-### 🛡️ Security
-- **Role-based Access**: User permission levels (1-3)
+### 🛡️ Security & Permissions
+- **Role-based Access Control**: 3-level permission system (User/Admin/Root)
+- **Flexible Permission Management**: Enable/disable as needed
 - **Input Validation**: Complete input sanitization
 - **Path Validation**: Whitelist-based restrictions
-- **Command Logging**: Complete audit trail
+- **Command Logging**: Complete audit trail with permission checks
 - **Secure Execution**: Robust error handling
 
 ### 📊 Logging and Monitoring
@@ -246,6 +247,122 @@ DEFAULT_THEME="dark"
 ```
 
 ## 🔒 Security Features
+
+### Role-Based Permission System
+
+Bashmenu includes a flexible 3-level permission system to control script access:
+
+#### Permission Levels
+
+1. **Level 1 - User**: Basic users (read-only operations)
+2. **Level 2 - Admin**: Administrators (modify operations)
+3. **Level 3 - Root**: Superuser (critical operations)
+
+#### How It Works
+
+The system automatically detects user level based on who's running bashmenu:
+
+```bash
+# User level detection
+- root user → Level 3
+- admin user → Level 2
+- other users → Level 1
+```
+
+Each script in `scripts.conf` has a required permission level:
+
+```bash
+# Format: Name|Path|Description|Level|Parameters
+Git Status|/opt/bashmenu/plugins/git_operations.sh|Show status|1|status
+Restart Nginx|/opt/bashmenu/plugins/restart_nginx.sh|Restart server|2|
+Deploy Production|/opt/bashmenu/plugins/deploy.sh|Deploy to prod|3|production
+```
+
+#### Enabling Permissions
+
+Permissions are **disabled by default**. To enable, edit `config/config.conf`:
+
+```bash
+# Enable permission-based access control
+ENABLE_PERMISSIONS=true
+```
+
+#### What Users See
+
+**Regular User (Level 1):**
+- Can execute Level 1 scripts
+- Sees 🔒 lock icon on Level 2 and 3 scripts
+- Gets "Access denied" message if trying to execute restricted scripts
+
+**Admin User (Level 2):**
+- Can execute Level 1 and 2 scripts
+- Sees 🔒 lock icon on Level 3 scripts
+
+**Root User (Level 3):**
+- Can execute all scripts (Level 1, 2, and 3)
+
+#### Best Practices
+
+**Level 1 Scripts** (Any user):
+- View logs and status
+- Check system information
+- List resources
+- Read-only operations
+
+**Level 2 Scripts** (Admin only):
+- Restart services
+- Deploy to staging
+- Backup operations
+- Configuration changes
+
+**Level 3 Scripts** (Root only):
+- Deploy to production
+- System updates
+- Delete operations
+- Critical system changes
+
+#### Customizing User Detection
+
+You can customize user level detection by modifying `src/utils.sh`:
+
+```bash
+get_user_level() {
+    local username=$(whoami)
+    
+    # Root always gets level 3
+    if [[ "$username" == "root" ]]; then
+        echo "3"
+        return
+    fi
+    
+    # Check if user is in admin group
+    if groups "$username" | grep -q "admin\|sudo\|wheel"; then
+        echo "2"
+        return
+    fi
+    
+    # Specific admin users
+    case "$username" in
+        admin|sysadmin|devops)
+            echo "2"
+            ;;
+        *)
+            echo "1"
+            ;;
+    esac
+}
+```
+
+#### Security Notes
+
+- Permissions are **advisory** - they control menu access only
+- Always set proper **file permissions** on scripts:
+  ```bash
+  sudo chown root:root /opt/bashmenu/plugins/critical_script.sh
+  sudo chmod 700 /opt/bashmenu/plugins/critical_script.sh
+  ```
+- All permission checks are **logged** for audit trail
+- Use `sudo` within scripts for actual privilege elevation
 
 ### Script Path Validation
 

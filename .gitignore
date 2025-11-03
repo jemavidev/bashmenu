@@ -1,0 +1,94 @@
+# =============================================================================
+# Bashmenu .gitignore
+# =============================================================================
+
+# IDE and Editor files
+.kiro/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test directories
+test/
+tests/tmp/
+tests/output/
+
+# Log files
+*.log
+logs/
+/tmp/
+
+# Backup files
+*.bak
+*.backup
+*.old
+*~
+
+# Configuration backups
+config/*.bak
+config/*.backup
+*.conf.bak
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Runtime files
+*.pid
+*.sock
+
+# History files
+.bash_history
+.bashmenu_history.log
+
+# Local development
+local/
+dev/
+sandbox/
+
+# Package manager files
+node_modules/
+vendor/
+
+# Compiled files
+*.o
+*.so
+*.dylib
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+
+# Documentation build files
+docs/_build/
+site/
+
+# Coverage reports
+coverage/
+.coverage
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Personal notes
+TODO.md
+NOTES.md
+notes/

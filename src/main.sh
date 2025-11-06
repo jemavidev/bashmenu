@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Strict mode for better error handling
+set -euo pipefail
+
 # =============================================================================
 # Bashmenu - Sistema de Menú Interactivo para Administración
 # =============================================================================
@@ -94,6 +97,9 @@ print_header() {
 # Validation Functions
 # =============================================================================
 
+# check_requirements() -> int
+# Checks if all required system components are available
+# Returns: 0 on success, 1 on failure
 check_requirements() {
     print_info "Checking system requirements..."
     
@@ -645,6 +651,7 @@ show_system_info() {
 # =============================================================================
 
 main() {
+    echo "DEBUG: main() called" >> /tmp/test_main.log
     # Check requirements
     if ! check_requirements; then
         print_error "System requirements not met. Exiting."
@@ -722,7 +729,7 @@ show_version() {
 show_config_info() {
     print_header "Configuration Information"
     echo ""
-    
+
     if [[ -f "$CONFIG_FILE" ]]; then
         echo -e "${GREEN}Configuration file:${NC} $CONFIG_FILE"
         echo ""
@@ -736,6 +743,12 @@ show_config_info() {
         echo "Enable Notifications: ${ENABLE_NOTIFICATIONS:-true}"
         echo "Log Level: ${LOG_LEVEL:-1}"
         echo "Log File: ${LOG_FILE:-/tmp/bashmenu.log}"
+        echo ""
+        echo -e "${CYAN}Auto-Scan Settings:${NC}"
+        echo "Enable Auto-Scan: ${ENABLE_AUTO_SCAN:-true}"
+        echo "Enable Manual Scripts: ${ENABLE_MANUAL_SCRIPTS:-true}"
+        echo "Plugin Scan Depth: ${PLUGIN_SCAN_DEPTH:-3}"
+        echo "Plugin Extensions: ${PLUGIN_EXTENSIONS:-.sh}"
         echo ""
     else
         echo -e "${YELLOW}No configuration file found${NC}"

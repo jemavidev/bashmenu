@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Strict mode for better error handling
+set -euo pipefail
+
 # =============================================================================
 # Módulo Ejecutor de Scripts para Bashmenu
 # =============================================================================

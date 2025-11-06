@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Strict mode for better error handling
+set -euo pipefail
+
 # =============================================================================
 # Módulo Cargador de Scripts para Bashmenu
 # =============================================================================
@@ -250,6 +253,180 @@ get_script_info() {
 }
 
 # =============================================================================
+# Auto-Scan Plugin Directories
+# =============================================================================
+
+# Array asociativo para almacenar scripts auto-detectados
+# Formato: AUTO_SCRIPTS["ruta/relativa"]="ruta|nombre|descripción|nivel"
+declare -gA AUTO_SCRIPTS
+
+# Escanear directorios de plugins automáticamente
+scan_plugin_directories() {
+    local plugin_dir="${PLUGIN_DIR:-$PROJECT_ROOT/plugins}"
+
+    # Verificar si el auto-scan está habilitado
+    if [[ "${ENABLE_AUTO_SCAN:-true}" != "true" ]]; then
+        if declare -f log_debug >/dev/null; then
+            log_debug "Auto-scan disabled by configuration"
+        fi
+        return 0
+    fi
+
+    if [[ ! -d "$plugin_dir" ]]; then
+        if declare -f log_warn >/dev/null; then
+            log_warn "Plugin directory not found: $plugin_dir"
+        fi
+        return 1
+    fi
+
+    if declare -f log_info >/dev/null; then
+        log_info "Scanning plugin directories: $plugin_dir"
+    fi
+
+    local scan_depth="${PLUGIN_SCAN_DEPTH:-3}"
+    local extensions="${PLUGIN_EXTENSIONS:-.sh}"
+    local script_count=0
+
+    # Limpiar array anterior
+    AUTO_SCRIPTS=()
+
+    # Debug: write to file
+    echo "DEBUG: plugin_dir=$plugin_dir" >> /tmp/bashmenu_debug.log
+    echo "DEBUG: extensions=$extensions" >> /tmp/bashmenu_debug.log
+    echo "DEBUG: ALLOWED_SCRIPT_DIRS=${ALLOWED_SCRIPT_DIRS:-}" >> /tmp/bashmenu_debug.log
+
+    # Convertir extensiones a patrón find
+    local find_pattern=""
+    IFS=' ' read -ra EXT_ARRAY <<< "$extensions"
+    for ext in "${EXT_ARRAY[@]}"; do
+        if [[ -n "$find_pattern" ]]; then
+            find_pattern="$find_pattern -o"
+        fi
+        # Asegurar que la extensión tenga punto al inicio
+        [[ "$ext" != .* ]] && ext=".$ext"
+        find_pattern="$find_pattern -name \"*$ext\""
+    done
+
+    echo "DEBUG: find_pattern=$find_pattern" >> /tmp/bashmenu_debug.log
+
+    # Construir comando find con profundidad máxima
+    local find_cmd="find \"$plugin_dir\" -type f -executable \( $find_pattern \) -print0"
+
+    if [[ "$scan_depth" -gt 0 ]]; then
+        find_cmd="find \"$plugin_dir\" -maxdepth \"$scan_depth\" -type f -executable \( $find_pattern \) -print0"
+    fi
+
+    echo "DEBUG: find_cmd=$find_cmd" >> /tmp/bashmenu_debug.log
+
+    # Ejecutar find y procesar resultados
+    local found_scripts=""
+    while IFS= read -r -d '' script_path; do
+        found_scripts="$found_scripts $script_path"
+        # Verificar que esté en directorios permitidos
+        if ! check_allowed_directory "$script_path" "${ALLOWED_SCRIPT_DIRS:-}"; then
+            echo "DEBUG: Skipping script outside allowed directories: $script_path" >> /tmp/bashmenu_debug.log
+            if declare -f log_debug >/dev/null; then
+                log_debug "Skipping script outside allowed directories: $script_path"
+            fi
+            continue
+        fi
+
+        # Obtener información del script
+        local rel_path="${script_path#$plugin_dir/}"
+        local script_name=$(basename "$script_path")
+        local dir_path=$(dirname "$rel_path")
+
+        # Determinar nombre para mostrar (quitar extensión)
+        local display_name="${script_name%.*}"
+
+        # Generar descripción automática
+        local description="Auto-detected script"
+        if [[ "$dir_path" != "." ]]; then
+            description="$description in $dir_path/"
+        fi
+
+        # Determinar nivel de permisos basado en nombre y ubicación
+        local level=$(determine_script_level "$script_name" "$dir_path")
+
+        # Crear clave única para el script
+        local script_key="$rel_path"
+
+        # Crear clave única y segura para el script (sanitizar caracteres especiales)
+        local safe_key=$(echo "$rel_path" | sed 's/[^a-zA-Z0-9_]/_/g')
+
+        # Almacenar información del script
+        AUTO_SCRIPTS["${safe_key}_path"]="$script_path"
+        AUTO_SCRIPTS["${safe_key}_name"]="$display_name"
+        AUTO_SCRIPTS["${safe_key}_description"]="$description"
+        AUTO_SCRIPTS["${safe_key}_level"]="$level"
+        AUTO_SCRIPTS["${safe_key}_directory"]="$dir_path"
+        AUTO_SCRIPTS["${safe_key}_original_key"]="$rel_path"
+
+        script_count=$((script_count + 1))
+
+        echo "DEBUG: Added script: $script_key -> $script_path" >> /tmp/bashmenu_debug.log
+
+        if declare -f log_debug >/dev/null; then
+            log_debug "Auto-detected script: $script_key -> $script_path"
+        fi
+
+    done < <(eval "$find_cmd" 2>&1 | tee /tmp/bashmenu_find.log)
+
+    echo "DEBUG: found_scripts=$found_scripts" >> /tmp/bashmenu_debug.log
+    echo "DEBUG: script_count=$script_count" >> /tmp/bashmenu_debug.log
+    echo "DEBUG: AUTO_SCRIPTS count=${#AUTO_SCRIPTS[@]}" >> /tmp/bashmenu_debug.log
+
+    if declare -f log_info >/dev/null; then
+        log_info "Auto-scanned $script_count scripts from plugin directories"
+    fi
+
+    return 0
+}
+
+# Determinar nivel de permisos para un script basado en su nombre y ubicación
+determine_script_level() {
+    local script_name="$1"
+    local dir_path="$2"
+
+    # Nivel 3 (Root) - scripts críticos o de producción
+    if [[ "$script_name" =~ (deploy|production|critical|delete|remove|shutdown|reboot) ]] ||
+       [[ "$dir_path" =~ (production|critical|system) ]]; then
+        echo "3"
+        return
+    fi
+
+    # Nivel 2 (Admin) - scripts administrativos
+    if [[ "$script_name" =~ (restart|update|admin|backup|restore|config) ]] ||
+       [[ "$dir_path" =~ (admin|maintenance|tools) ]]; then
+        echo "2"
+        return
+    fi
+
+    # Nivel 1 (User) - scripts de usuario por defecto
+    echo "1"
+}
+
+# Obtener información de un script auto-detectado
+get_auto_script_info() {
+    local script_key="$1"
+    local info_type="$2"  # path, name, description, level, directory
+
+    local key="${script_key}_${info_type}"
+    echo "${AUTO_SCRIPTS[$key]:-}"
+}
+
+# Contar scripts auto-detectados
+count_auto_scripts() {
+    local count=0
+    for key in "${!AUTO_SCRIPTS[@]}"; do
+        if [[ $key =~ _path$ ]]; then
+            count=$((count + 1))
+        fi
+    done
+    echo "$count"
+}
+
+# =============================================================================
 # Export Functions
 # =============================================================================
 
@@ -257,3 +434,7 @@ export -f load_script_config
 export -f validate_script_entry
 export -f check_allowed_directory
 export -f get_script_info
+export -f scan_plugin_directories
+export -f determine_script_level
+export -f get_auto_script_info
+export -f count_auto_scripts

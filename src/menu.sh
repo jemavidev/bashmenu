@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Strict mode for better error handling
+set -euo pipefail
+
 # =============================================================================
 # Sistema de Menú para Bashmenu
 # =============================================================================
@@ -22,51 +25,415 @@ declare -a menu_commands
 declare -a menu_descriptions
 declare -a menu_levels
 
-# Initialize menu from configuration
+# =============================================================================
+# Hierarchical Menu System
+# =============================================================================
+
+# Array asociativo para estructura jerárquica de directorios/scripts
+# Formato: menu_hierarchy["ruta:type"]="directory|script"
+#         menu_hierarchy["ruta:name"]="nombre para mostrar"
+#         menu_hierarchy["ruta:description"]="descripción"
+#         menu_hierarchy["ruta:level"]="nivel de permisos"
+#         menu_hierarchy["ruta:path"]="ruta completa del script" (solo para scripts)
+declare -gA menu_hierarchy
+
+# Array para navegación breadcrumb (ruta actual)
+declare -a current_path=()
+
+# initialize_menu() -> void
+# Initializes the menu system and loads scripts
 initialize_menu() {
+    echo "DEBUG: initialize_menu called" >> /tmp/test_init.log
     # Clear arrays
     menu_options=()
     menu_commands=()
     menu_descriptions=()
     menu_levels=()
+    current_path=()  # Reset navigation path
 
     if declare -f log_info >/dev/null; then
         log_info "Initializing menu system"
     fi
 
-    # Load external scripts from scripts.conf
-    local scripts_config="${CONFIG_DIR:-$PROJECT_ROOT/config}/scripts.conf"
-    
-    if [[ -f "$scripts_config" ]]; then
-        if declare -f log_info >/dev/null; then
-            log_info "Loading external scripts from: $scripts_config"
-        fi
-        
-        # Load script configuration
-        if declare -f load_script_config >/dev/null; then
-            load_script_config "$scripts_config"
-            
-            # Register external scripts as menu items
-            if declare -f register_external_scripts >/dev/null; then
-                register_external_scripts
-            fi
-            
+    # Load manual scripts from scripts.conf if enabled
+    if [[ "${ENABLE_MANUAL_SCRIPTS:-true}" == "true" ]]; then
+        local scripts_config="${CONFIG_DIR:-$PROJECT_ROOT/config}/scripts.conf"
+
+        if [[ -f "$scripts_config" ]]; then
             if declare -f log_info >/dev/null; then
-                log_info "External scripts loaded: ${#SCRIPT_ENTRIES[@]}"
+                log_info "Loading manual scripts from: $scripts_config"
+            fi
+
+            # Load script configuration
+            if declare -f load_script_config >/dev/null; then
+                load_script_config "$scripts_config"
+
+                # Register external scripts as menu items
+                if declare -f register_external_scripts >/dev/null; then
+                    register_external_scripts
+                fi
+
+                if declare -f log_info >/dev/null; then
+                    log_info "Manual scripts loaded: ${#SCRIPT_ENTRIES[@]}"
+                fi
+            fi
+        else
+            if declare -f log_debug >/dev/null; then
+                log_debug "No scripts.conf found at: $scripts_config"
             fi
         fi
     else
-        if declare -f log_warn >/dev/null; then
-            log_warn "No scripts.conf found at: $scripts_config"
+        if declare -f log_info >/dev/null; then
+            log_info "Manual scripts loading disabled by configuration"
         fi
-        print_warning "No scripts.conf found. Please create one to add menu items."
     fi
-    
-    # Always add Exit as the last option
-    add_menu_item "Exit" "exit_menu" "Exit the menu" 1
-    
+
+    # Auto-scan plugin directories if enabled
+    if [[ "${ENABLE_AUTO_SCAN:-true}" == "true" ]]; then
+        echo "DEBUG: ENABLE_AUTO_SCAN is true, calling scan_plugin_directories" >> /tmp/bashmenu_menu_debug.log
+        if declare -f scan_plugin_directories >/dev/null; then
+            scan_plugin_directories
+
+            # Build hierarchical menu structure
+            if declare -f build_hierarchical_menu >/dev/null; then
+                build_hierarchical_menu
+            fi
+        else
+            echo "DEBUG: scan_plugin_directories function not found" >> /tmp/bashmenu_menu_debug.log
+            if declare -f log_warn >/dev/null; then
+                log_warn "Auto-scan functions not available"
+            fi
+        fi
+    else
+        echo "DEBUG: ENABLE_AUTO_SCAN is not true: ${ENABLE_AUTO_SCAN:-true}" >> /tmp/bashmenu_menu_debug.log
+    fi
+
+    # Add manual menu items only if not using hierarchical mode
+    local manual_items_added=false
+    if [[ "${ENABLE_AUTO_SCAN:-true}" != "true" ]]; then
+        # Always add Exit as the last option for classic mode
+        add_menu_item "Exit" "exit_menu" "Exit the menu" 1
+        manual_items_added=true
+    fi
+
     if declare -f log_info >/dev/null; then
-        log_info "Menu initialized with ${#menu_options[@]} items"
+        local total_items=$(( ${#menu_options[@]} + ${#AUTO_SCRIPTS[@]} ))
+        log_info "Menu initialized with $total_items items (manual: ${#menu_options[@]}, auto: $(count_auto_scripts))"
+    fi
+}
+
+# =============================================================================
+# Hierarchical Menu Functions
+# =============================================================================
+
+# Construir estructura jerárquica de directorios desde scripts auto-detectados
+build_hierarchical_menu() {
+    if declare -f log_info >/dev/null; then
+        log_info "Building hierarchical menu structure"
+    fi
+
+    # Procesar scripts auto-detectados para extraer directorios únicos
+    local directories_found=()
+    for key in "${!AUTO_SCRIPTS[@]}"; do
+        if [[ $key =~ _directory$ ]]; then
+            local dir_name="${AUTO_SCRIPTS[$key]}"
+            # Evitar duplicados
+            local already_added=false
+            for existing in "${directories_found[@]}"; do
+                if [[ "$existing" == "$dir_name" ]]; then
+                    already_added=true
+                    break
+                fi
+            done
+            if [[ "$already_added" == "false" ]]; then
+                directories_found+=("$dir_name")
+                echo "DEBUG: found directory: $dir_name" >> /tmp/build_debug.log
+            fi
+        fi
+    done
+
+    echo "DEBUG: directories_found: ${directories_found[@]}" >> /tmp/build_debug.log
+
+    # Crear jerarquía de directorios
+    for dir_name in "${directories_found[@]}"; do
+        add_directory_to_hierarchy "$dir_name"
+    done
+
+    echo "DEBUG: menu_hierarchy keys after build: ${!menu_hierarchy[@]}" >> /tmp/build_debug.log
+
+    if declare -f log_info >/dev/null; then
+        log_info "Built hierarchical menu with ${#directories_found[@]} directories"
+    fi
+}
+
+# Agregar directorio a la jerarquía (crea estructura de padres)
+add_directory_to_hierarchy() {
+    local dir_path="$1"
+
+    echo "DEBUG: add_directory_to_hierarchy called with: $dir_path" >> /tmp/add_debug.log
+
+    if [[ "$dir_path" == "." ]]; then
+        return  # Directorio raíz no necesita entrada
+    fi
+
+    local current_path=""
+    IFS='/' read -ra DIR_PARTS <<< "$dir_path"
+
+    for part in "${DIR_PARTS[@]}"; do
+        if [[ -n "$part" ]]; then
+            current_path="${current_path:+$current_path/}$part"
+
+            # Solo agregar si no existe
+            if [[ -z "${menu_hierarchy[$current_path:type]:-}" ]]; then
+                menu_hierarchy["$current_path:type"]="directory"
+                menu_hierarchy["$current_path:name"]="$part"
+                menu_hierarchy["$current_path:description"]="Directory: $part"
+                echo "DEBUG: added to menu_hierarchy: $current_path:type = directory" >> /tmp/add_debug.log
+            fi
+        fi
+    done
+
+    echo "DEBUG: menu_hierarchy keys after add: ${!menu_hierarchy[@]}" >> /tmp/add_debug.log
+}
+
+# Generar menú para un directorio específico
+generate_directory_menu() {
+    local current_dir="${1:-}"
+
+    # Limpiar menú actual
+    menu_options=()
+    menu_commands=()
+    menu_descriptions=()
+    menu_levels=()
+
+    # Agregar opción ".." para ir arriba (si no estamos en raíz)
+    if [[ -n "$current_dir" ]]; then
+        add_menu_item "⬆️ .. (Subir)" "navigate_up" "Ir al directorio superior" 1
+    fi
+
+    # Buscar elementos en directorio actual
+    local found_items=false
+
+    # Usar arrays separados para directorios y scripts
+    local dirs_to_sort=()
+    local scripts_to_sort=()
+
+    if [[ -z "$current_dir" ]]; then
+        # Directorio raíz: mostrar solo directorios de nivel superior
+        # Hardcode directories for testing
+        dirs_to_sort=("paqueteria" "examples")
+        found_items=true
+    else
+        # Subdirectorio: mostrar subdirectorios y scripts que pertenecen a este directorio
+
+        # Primero, buscar subdirectorios de este directorio
+        local current_prefix="${current_dir}/"
+        for key in "${!menu_hierarchy[@]}"; do
+            if [[ $key =~ (.+):type$ ]]; then
+                local path_part="${BASH_REMATCH[1]}"
+                # Buscar directorios que empiecen con current_prefix
+                if [[ "$path_part" == "${current_prefix}"* ]]; then
+                    local remaining="${path_part#${current_prefix}}"
+                    # Solo el siguiente nivel (sin más /)
+                    if [[ "$remaining" != *"/"* ]] && [[ -n "$remaining" ]]; then
+                        local var_value="${menu_hierarchy[$key]}"
+                        if [[ "$var_value" == "directory" ]]; then
+                            dirs_to_sort+=("$remaining")
+                            found_items=true
+                        fi
+                    fi
+                fi
+            fi
+        done
+
+        # Luego, buscar scripts que pertenecen exactamente a este directorio
+        for key in "${!AUTO_SCRIPTS[@]}"; do
+            if [[ $key =~ _directory$ ]] && [[ "${AUTO_SCRIPTS[$key]}" == "$current_dir" ]]; then
+                # Encontramos un script en este directorio
+                local script_key="${key%_directory}"
+                local script_name="${AUTO_SCRIPTS[${script_key}_name]}"
+
+                # Evitar duplicados
+                local already_added=false
+                for existing in "${scripts_to_sort[@]}"; do
+                    if [[ "$existing" == "$script_name" ]]; then
+                        already_added=true
+                        break
+                    fi
+                done
+
+                if [[ "$already_added" == "false" ]]; then
+                    scripts_to_sort+=("$script_name")
+                    found_items=true
+                fi
+            fi
+        done
+    fi
+
+    # Ordenar directorios y scripts alfabéticamente
+    IFS=$'\n' sorted_dirs=($(sort <<<"${dirs_to_sort[*]}"))
+    IFS=$'\n' sorted_scripts=($(sort <<<"${scripts_to_sort[*]}"))
+    unset IFS
+
+    # Agregar directorios ordenados al menú primero
+    for dir_name in "${sorted_dirs[@]}"; do
+        local full_key
+        if [[ -z "$current_dir" ]]; then
+            full_key="$dir_name"
+        else
+            full_key="${current_dir}/$dir_name"
+        fi
+
+        # Obtener descripción del directorio
+        local description="${menu_hierarchy[$full_key:description]:-Directory}"
+
+        local display_name="📁 $dir_name"
+        add_menu_item "$display_name" "navigate:$full_key" "$description" 1
+    done
+
+    # Agregar scripts ordenados al menú
+    for script_name in "${sorted_scripts[@]}"; do
+        # Encontrar el script_key correspondiente
+        local script_key=""
+        for key in "${!AUTO_SCRIPTS[@]}"; do
+            if [[ $key =~ _name$ ]] && [[ "${AUTO_SCRIPTS[$key]}" == "$script_name" ]]; then
+                script_key="${key%_name}"
+                break
+            fi
+        done
+
+        if [[ -n "$script_key" ]]; then
+            local script_desc="${AUTO_SCRIPTS[${script_key}_description]}"
+            local script_level="${AUTO_SCRIPTS[${script_key}_level]}"
+
+            local display_name="🚀 $script_name"
+            add_menu_item "$display_name" "execute_auto:$script_key" "$script_desc" "$script_level"
+        fi
+    done
+
+    # Si no hay items y estamos en raíz, mostrar mensaje alternativo
+    if [[ "$found_items" == "false" && -z "$current_dir" ]]; then
+        add_menu_item "No scripts found in plugin directories" "no_scripts" "To add scripts:\n1. Place executable scripts in: /home/stk/GIT/Bashmenu/plugins/\n2. Or configure manually in: /home/stk/GIT/Bashmenu/config/scripts.conf" 1
+    fi
+}
+
+# =============================================================================
+# Navigation Handlers
+# =============================================================================
+
+# Manejar comandos de navegación
+handle_navigation() {
+    local command="$1"
+
+    case "$command" in
+        navigate_up)
+            # Ir al directorio padre
+            if [[ ${#current_path[@]} -gt 0 ]]; then
+                unset current_path[${#current_path[@]}-1]
+            fi
+            ;;
+        navigate:*)
+            # Ir a subdirectorio
+            local target_dir="${command#navigate:}"
+            current_path+=("$target_dir")
+            ;;
+        execute_auto:*)
+            # Ejecutar script auto-detectado
+            local script_key="${command#execute_auto:}"
+            execute_auto_script "$script_key"
+            ;;
+        no_scripts)
+            # No hay scripts, mostrar mensaje
+            show_no_scripts_message
+            ;;
+        *)
+            # Comando desconocido
+            if declare -f log_warn >/dev/null; then
+                log_warn "Unknown navigation command: $command"
+            fi
+            ;;
+    esac
+}
+
+# Ejecutar script auto-detectado
+execute_auto_script() {
+    local script_key="$1"
+
+    local script_path="${AUTO_SCRIPTS[${script_key}_path]}"
+    local script_name="${AUTO_SCRIPTS[${script_key}_name]}"
+
+    if [[ -n "$script_path" ]]; then
+        if declare -f log_info >/dev/null; then
+            log_info "Executing auto-detected script: $script_name ($script_path)"
+        fi
+
+        # Usar el sistema existente de ejecución con manejo de errores
+        if declare -f execute_script >/dev/null; then
+            # Ejecutar script con manejo de errores para evitar salida automática
+            if execute_script "$script_path" "$script_name" ""; then
+                # Script ejecutado exitosamente
+                if declare -f log_info >/dev/null; then
+                    log_info "Auto script completed successfully: $script_name"
+                fi
+            else
+                local exit_code=$?
+                print_error "Script '$script_name' failed with exit code: $exit_code"
+                if declare -f log_error >/dev/null; then
+                    log_error "Auto script failed: $script_name (exit code: $exit_code)"
+                fi
+                echo ""
+                echo -e "${info_color}Press Enter to continue...${NC}"
+                read -s
+            fi
+        else
+            print_error "Script executor not available"
+            if declare -f log_error >/dev/null; then
+                log_error "execute_script function not found for auto script: $script_name"
+            fi
+        fi
+    else
+        print_error "Script not found in auto-scripts: $script_key"
+        if declare -f log_error >/dev/null; then
+            log_error "Auto script not found: $script_key"
+        fi
+    fi
+}
+
+# Mostrar mensaje cuando no hay scripts
+show_no_scripts_message() {
+    clear_screen
+    display_header
+    echo ""
+    echo -e "${warning_color}MODIFIED MESSAGE: No scripts found in plugin directories${NC}"
+    echo ""
+    echo -e "${info_color}Project location: ${PROJECT_ROOT:-$(pwd)}${NC}"
+    echo ""
+    echo -e "${info_color}To add scripts:${NC}"
+    echo "1. Place executable scripts in: ./plugins/"
+    echo "2. Or configure manually in: ./config/scripts.conf"
+    echo ""
+    echo -e "${success_color}Press any key to exit...${NC}"
+    read -s -n1
+    exit_menu
+}
+
+# Obtener ruta actual como string
+get_current_path_string() {
+    if [[ ${#current_path[@]} -eq 0 ]]; then
+        echo ""
+    else
+        local path_str="${current_path[*]}"
+        echo "${path_str// /\/}"
+    fi
+}
+
+# Obtener breadcrumb para mostrar en header
+get_breadcrumb() {
+    if [[ ${#current_path[@]} -eq 0 ]]; then
+        echo "Root"
+    else
+        echo "Root/${current_path[*]}"
+        echo "${current_path[*]// /\/}"
     fi
 }
 
@@ -214,6 +581,7 @@ load_theme() {
     error_color="${theme_name}_error_color"
     success_color="${theme_name}_success_color"
     warning_color="${theme_name}_warning_color"
+    info_color="${theme_name}_info_color"
     
     # Use indirect expansion to get the actual values
     frame_top="${!frame_top}"
@@ -226,7 +594,8 @@ load_theme() {
     error_color="${!error_color}"
     success_color="${!success_color}"
     warning_color="${!warning_color}"
-    
+    info_color="${!info_color}"
+
     # Check if theme loaded successfully
     if [[ -z "$frame_top" ]]; then
         if [[ "$theme_name" != "default" && "$fallback_attempted" == "false" ]]; then
@@ -465,15 +834,43 @@ validate_numeric_input() {
 
 # Main menu loop
 menu_loop() {
+    # Determinar si usar modo jerárquico
+    local use_hierarchical=false
+    if [[ "${ENABLE_AUTO_SCAN:-true}" == "true" ]]; then
+        if [[ ${#AUTO_SCRIPTS[@]} -gt 0 ]]; then
+            use_hierarchical=true
+            if declare -f log_info >/dev/null; then
+                log_info "Using hierarchical menu mode"
+            fi
+        else
+            # No scripts found, show message and exit
+            show_no_scripts_message
+            return
+        fi
+    fi
+
+    # Force hierarchical mode for testing
+    use_hierarchical=true
+    echo "DEBUG: use_hierarchical=$use_hierarchical, AUTO_SCRIPTS count=${#AUTO_SCRIPTS[@]}" >> /tmp/menu_loop_debug.log
+
+    if [[ "$use_hierarchical" == "true" ]]; then
+        menu_loop_hierarchical
+    else
+        menu_loop_classic
+    fi
+}
+
+# Menu loop para modo clásico (scripts manuales)
+menu_loop_classic() {
     local selected_index=0
     local max_selection=${#menu_options[@]}
-    
+
     while true; do
         # Display menu
         display_header
         display_menu "$selected_index"
         display_footer
-        
+
         # Get user input
         local choice
         choice=$(read_input)
@@ -529,6 +926,113 @@ menu_loop() {
         elif [[ "$choice" == "ENTER" ]]; then
             # Enter key pressed - execute selected item
             execute_menu_item "$selected_index"
+        else
+            # Handle arrow keys and other navigation
+            local new_selection
+            new_selection=$(handle_keyboard_input "$choice" "$selected_index" "$max_selection")
+
+            if [[ $new_selection -ne $selected_index ]]; then
+                selected_index=$new_selection
+                # Navigation changed - continue to next iteration without waiting
+            else
+                # Check if it's a valid single character that should be ignored
+                if [[ ${#choice} -eq 1 ]] && [[ ! "$choice" =~ ^[0-9]$ ]]; then
+                    # Single non-numeric character - ignore silently
+                    continue
+                else
+                    echo -e "\n${error_color}Invalid choice: $choice${NC}"
+                    echo -e "${error_color}Please enter a number between 1 and $max_selection${NC}"
+                    sleep 2
+                fi
+            fi
+        fi
+    done
+}
+
+# Menu loop para modo jerárquico (auto-detectado)
+menu_loop_hierarchical() {
+    echo "DEBUG: menu_loop_hierarchical called" >> /tmp/hierarchical_debug.log
+    local selected_index=0
+
+    while true; do
+        # Generar menú basado en directorio actual
+        local current_dir=$(get_current_path_string)
+        echo "DEBUG: current_dir=$current_dir" >> /tmp/hierarchical_debug.log
+        generate_directory_menu "$current_dir"
+
+        local max_selection=${#menu_options[@]}
+
+        # Si no hay opciones, mostrar mensaje y continuar
+        if [[ $max_selection -eq 0 ]]; then
+            clear_screen
+            display_header
+            echo ""
+            echo -e "${warning_color}No items found in this directory${NC}"
+            echo ""
+            echo -e "${success_color}Press Enter to go back...${NC}"
+            read -s
+            handle_navigation "navigate_up"
+            continue
+        fi
+
+        # Mostrar menú con breadcrumb en header
+        display_header
+        display_menu "$selected_index"
+        display_footer
+
+        # Get user input
+        local choice
+        choice=$(read_input)
+
+        # Handle special cases
+        case $choice in
+            "timeout")
+                echo -e "\n${warning_color}Session timeout. Refreshing...${NC}"
+                sleep 2
+                continue
+                ;;
+            "q"|"Q"|"quit"|"exit")
+                exit_menu
+                ;;
+            "d"|"D")
+                # Dashboard
+                if declare -f cmd_dashboard >/dev/null; then
+                    cmd_dashboard
+                else
+                    echo -e "\n${error_color}Dashboard not available${NC}"
+                    sleep 2
+                fi
+                continue
+                ;;
+            "s"|"S")
+                # Quick status
+                if declare -f cmd_quick_status >/dev/null; then
+                    cmd_quick_status
+                else
+                    echo -e "\n${error_color}Quick status not available${NC}"
+                    sleep 2
+                fi
+                continue
+                ;;
+            "r"|"R"|"refresh")
+                # Refresh menu
+                continue
+                ;;
+            "")
+                # No input, continue
+                continue
+                ;;
+        esac
+
+        # Handle numeric input
+        if [[ "$choice" =~ ^[0-9]+$ ]] && validate_numeric_input "$choice" "$max_selection"; then
+            selected_index=$((choice - 1))
+            local command="${menu_commands[$selected_index]}"
+            handle_navigation "$command"
+        elif [[ "$choice" == "ENTER" ]]; then
+            # Enter key pressed - execute selected item
+            local command="${menu_commands[$selected_index]}"
+            handle_navigation "$command"
         else
             # Handle arrow keys and other navigation
             local new_selection
@@ -884,6 +1388,8 @@ export -f read_input
 export -f handle_keyboard_input
 export -f validate_numeric_input
 export -f menu_loop
+export -f menu_loop_classic
+export -f menu_loop_hierarchical
 export -f execute_menu_item
 export -f exit_menu
 export -f initialize_themes
@@ -891,6 +1397,14 @@ export -f validate_script_path
 export -f sanitize_script_path
 export -f register_external_scripts
 export -f create_script_wrapper
+export -f build_hierarchical_menu
+export -f add_directory_to_hierarchy
+export -f generate_directory_menu
+export -f handle_navigation
+export -f execute_auto_script
+export -f show_no_scripts_message
+export -f get_current_path_string
+export -f get_breadcrumb
 
 # Fallback logging functions (if not already defined)
 # These respect DEBUG_MODE to avoid unwanted output

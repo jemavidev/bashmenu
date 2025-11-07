@@ -25,6 +25,9 @@ declare -a menu_commands
 declare -a menu_descriptions
 declare -a menu_levels
 
+# Script entries from configuration
+declare -gA SCRIPT_ENTRIES
+
 # =============================================================================
 # Hierarchical Menu System
 # =============================================================================

@@ -63,6 +63,9 @@ initialize_menu() {
     menu_levels=()
     current_path=()  # Reset navigation path
 
+    # Initialize AUTO_SCRIPTS as empty array to prevent unbound variable errors
+    AUTO_SCRIPTS=()
+
     if declare -f log_info >/dev/null; then
         log_info "Initializing menu system"
     fi

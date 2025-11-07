@@ -34,6 +34,9 @@ declare -gA SCRIPT_NAME_MAPPING
 # Script level mapping for permissions
 declare -gA SCRIPT_LEVEL_MAPPING
 
+# Auto-detected scripts array (from script_loader.sh)
+declare -gA AUTO_SCRIPTS
+
 # =============================================================================
 # Hierarchical Menu System
 # =============================================================================

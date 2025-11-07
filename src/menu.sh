@@ -28,6 +28,12 @@ declare -a menu_levels
 # Script entries from configuration
 declare -gA SCRIPT_ENTRIES
 
+# Script name mapping for better display names
+declare -gA SCRIPT_NAME_MAPPING
+
+# Script level mapping for permissions
+declare -gA SCRIPT_LEVEL_MAPPING
+
 # =============================================================================
 # Hierarchical Menu System
 # =============================================================================
@@ -126,6 +132,10 @@ initialize_menu() {
 
     # Initialize SCRIPT_ENTRIES as empty array to prevent unbound variable error
     SCRIPT_ENTRIES=()
+
+    # Initialize script name mapping
+    SCRIPT_NAME_MAPPING=()
+    SCRIPT_LEVEL_MAPPING=()
 }
 
 # =============================================================================
@@ -311,7 +321,12 @@ generate_directory_menu() {
             local script_desc="${AUTO_SCRIPTS[${script_key}_description]}"
             local script_level="${AUTO_SCRIPTS[${script_key}_level]}"
 
-            local display_name="🚀 $script_name"
+            # Get better display name from mapping or use filename transformation
+            local display_name=$(get_script_display_name "$script_name")
+
+            # Get level from mapping or use default
+            local script_level="${SCRIPT_LEVEL_MAPPING[$script_name]:-1}"
+
             add_menu_item "$display_name" "execute_auto:$script_key" "$script_desc" "$script_level"
         fi
     done
@@ -492,6 +507,52 @@ directory_has_scripts() {
     else
         return 1
     fi
+}
+
+# Get better display name for scripts
+get_script_display_name() {
+    local script_name="$1"
+
+    # Check if we have a custom mapping
+    if [[ -n "${SCRIPT_NAME_MAPPING[$script_name]:-}" ]]; then
+        echo "${SCRIPT_NAME_MAPPING[$script_name]}"
+        return
+    fi
+
+    # Transform filename to better display name
+    local display_name="$script_name"
+
+    # Remove .sh extension if present
+    display_name="${display_name%.sh}"
+
+    # Replace underscores with spaces and capitalize words
+    display_name="${display_name//_/ }"
+
+    # Capitalize first letter of each word
+    display_name="$(echo "$display_name" | sed 's/\b\w/\U&/g')"
+
+    # Add appropriate emoji based on script name keywords
+    if [[ "$display_name" =~ (Deploy|Production|Build) ]]; then
+        display_name="🚀 $display_name"
+    elif [[ "$display_name" =~ (Update|Pull|Download) ]]; then
+        display_name="📥 $display_name"
+    elif [[ "$display_name" =~ (Push|Upload|Commit) ]]; then
+        display_name="⬆️ $display_name"
+    elif [[ "$display_name" =~ (Rollback|Revert|Undo) ]]; then
+        display_name="↩️ $display_name"
+    elif [[ "$display_name" =~ (Status|Monitor|Log|Check) ]]; then
+        display_name="📊 $display_name"
+    elif [[ "$display_name" =~ (Restart|Service|Systemd|Nginx) ]]; then
+        display_name="🔄 $display_name"
+    elif [[ "$display_name" =~ (Health|Verify|Test) ]]; then
+        display_name="🏥 $display_name"
+    elif [[ "$display_name" =~ (Diagnostic|Debug|Analyze) ]]; then
+        display_name="🔍 $display_name"
+    else
+        display_name="🚀 $display_name"
+    fi
+
+    echo "$display_name"
 }
 
 # Add menu item with duplicate prevention
@@ -1442,6 +1503,7 @@ export -f get_current_path_string
 export -f get_breadcrumb
 export -f scan_root_directories
 export -f directory_has_scripts
+export -f get_script_display_name
 
 # Fallback logging functions (if not already defined)
 # These respect DEBUG_MODE to avoid unwanted output

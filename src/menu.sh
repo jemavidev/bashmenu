@@ -1088,6 +1088,11 @@ menu_loop_hierarchical() {
 
 # Registra scripts externos como entradas de menú
 register_external_scripts() {
+    # Initialize SCRIPT_ENTRIES as empty array if not already done
+    if [[ -z "${SCRIPT_ENTRIES:-}" ]]; then
+        SCRIPT_ENTRIES=()
+    fi
+
     if [[ ${#SCRIPT_ENTRIES[@]} -eq 0 ]]; then
         if declare -f log_debug >/dev/null; then
             log_debug "No external scripts to register"

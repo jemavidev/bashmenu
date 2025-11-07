@@ -34,18 +34,20 @@
 # Git Operations - Manage Git repositories
 # The following examples are enabled by default. Comment them out if not needed:
 
-Git Status|/opt/bashmenu/plugins/examples/git_operations.sh|Show repository status|1|status
-Git Pull|/opt/bashmenu/plugins/examples/git_operations.sh|Pull latest changes|1|pull
-
-# More Git operations (uncomment to enable):
+# Git Operations - Manage Git repositories
+# Uncomment the following lines to enable Git operations:
+# Git Status|/opt/bashmenu/plugins/examples/git_operations.sh|Show repository status|1|status
+# Git Pull|/opt/bashmenu/plugins/examples/git_operations.sh|Pull latest changes|1|pull
 # Git Log|/opt/bashmenu/plugins/examples/git_operations.sh|Show recent commits|1|log
 # Git Branch|/opt/bashmenu/plugins/examples/git_operations.sh|Show branch info|1|branch
 
 # Docker Operations - Manage Docker containers
-# The following examples are enabled by default. Comment them out if not needed:
-
-Docker PS|/opt/bashmenu/plugins/examples/docker_manager.sh|Show running containers|1|ps
-Docker Logs|/opt/bashmenu/plugins/examples/docker_manager.sh|Show container logs|1|logs
+# Uncomment the following lines to enable Docker operations:
+# Docker PS|/opt/bashmenu/plugins/examples/docker_manager.sh|Show running containers|1|ps
+# Docker Logs|/opt/bashmenu/plugins/examples/docker_manager.sh|Show container logs|1|logs
+# Docker Build|/opt/bashmenu/plugins/examples/docker_manager.sh|Build containers|2|build
+# Docker Restart|/opt/bashmenu/plugins/examples/docker_manager.sh|Restart containers|2|restart
+# Docker Images|/opt/bashmenu/plugins/examples/docker_manager.sh|List Docker images|1|images
 
 # More Docker operations (uncomment to enable):
 # Docker Build|/opt/bashmenu/plugins/examples/docker_manager.sh|Build containers|2|build

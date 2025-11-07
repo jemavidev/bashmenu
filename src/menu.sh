@@ -126,8 +126,12 @@ initialize_menu() {
     fi
 
     if declare -f log_info >/dev/null; then
-        local total_items=$(( ${#menu_options[@]} + ${#AUTO_SCRIPTS[@]} ))
-        log_info "Menu initialized with $total_items items (manual: ${#menu_options[@]}, auto: $(count_auto_scripts))"
+        local auto_count=0
+        if [[ "${ENABLE_AUTO_SCAN:-true}" == "true" ]]; then
+            auto_count=$(count_auto_scripts)
+        fi
+        local total_items=$(( ${#menu_options[@]} + auto_count ))
+        log_info "Menu initialized with $total_items items (manual: ${#menu_options[@]}, auto: $auto_count)"
     fi
 
     # Initialize SCRIPT_ENTRIES as empty array to prevent unbound variable error

@@ -222,7 +222,7 @@ generate_directory_menu() {
     local scripts_to_sort=()
 
     if [[ -z "$current_dir" ]]; then
-        # Directorio raíz: escanear dinámicamente directorios de nivel superior
+        # Directorio raíz: escanear dinámicamente todos los directorios disponibles
         scan_root_directories
         found_items=true
     else

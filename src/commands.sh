@@ -56,15 +56,16 @@ cmd_dashboard() {
         echo ""
         
         print_separator
-        echo -e "${YELLOW}Auto-refresh in ${refresh_interval}s | Press Ctrl+C to exit${NC}"
-        
-        # Wait for refresh interval or user interrupt
-        sleep $refresh_interval || break
+        echo -e "${YELLOW}Press any key to return to menu...${NC}"
+
+        # Wait for any key press
+        read -s -n1 -t $refresh_interval || true
+        break
     done
-    
+
     echo ""
-    echo -e "${success_color}Press Enter to return to menu...${NC}"
-    read -s
+    echo -e "${success_color}Returning to menu...${NC}"
+    sleep 1
 }
 
 # =============================================================================

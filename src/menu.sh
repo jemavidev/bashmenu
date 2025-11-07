@@ -699,10 +699,6 @@ display_menu() {
             can_execute=false
         fi
 
-        # Format option number with better spacing
-        local option_num="$((i+1))"
-        local padded_num=$(printf "%2d" "$option_num")
-
         # Choose color based on selection and permissions
         local color="$option_color"
         local icon="  "
@@ -717,12 +713,12 @@ display_menu() {
             icon="🔒 "
         fi
 
-        # Display option with improved formatting - single line
+        # Display option without numbers - cleaner interface
         if [[ -n "$description" ]]; then
-            printf "%s %s%-2s " "$frame_left" "$icon" "$padded_num"
+            printf "%s %s" "$frame_left" "$icon"
             echo -e "${color}$option${NC} ${info_color}($description)${NC}"
         else
-            printf "%s %s%-2s " "$frame_left" "$icon" "$padded_num"
+            printf "%s %s" "$frame_left" "$icon"
             echo -e "${color}$option${NC}"
         fi
     done
@@ -730,56 +726,72 @@ display_menu() {
 
 # Display footer
 display_footer() {
-    local max_options=${#menu_options[@]}
     echo ""
-    echo -e "Navigate: ${selected_color}↑↓${NC} or ${selected_color}1-${max_options}${NC} • ${success_color}Enter${NC} select • ${BLUE}d${NC} dashboard • ${BLUE}s${NC} status • ${BLUE}r${NC} refresh • ${error_color}q${NC} quit"
+    echo -e "Navigate: ${selected_color}↑↓${NC} • ${success_color}Enter${NC} select • ${BLUE}d${NC} dashboard • ${BLUE}s${NC} status • ${BLUE}r${NC} refresh • ${error_color}q${NC} quit"
 }
 
 # =============================================================================
 # Input Handling
 # =============================================================================
 
-# Read user input with timeout
+# Read user input with timeout - navigation only (no number input)
 read_input() {
-    local timeout="${INPUT_TIMEOUT:-30}"
-    local choice=""
-    
-    # Check if timeout is disabled
-    if [[ "${SESSION_TIMEOUT_ENABLED:-true}" != "true" ]]; then
-        timeout=0  # No timeout
-    fi
+      local timeout="${INPUT_TIMEOUT:-300}"  # Increased timeout to 5 minutes to reduce flickering
 
-    # Try to read with timeout - using -n1 for single character, -s for silent
-    if [[ $timeout -eq 0 ]]; then
-        # No timeout - wait indefinitely
-        read -n1 -s choice
-    elif read -t "$timeout" -n1 -s choice; then
-        # Successfully read with timeout
-        :
-    else
-        # Timeout occurred
-        echo "timeout"
-        return
-    fi
-    
-    # Handle special keys (arrows)
-    case "$choice" in
-        $'\e')  # Escape sequence start
-            read -t 0.1 -n2 -s rest
-            case "$rest" in
-                "[A") echo "UP" ;;
-                "[B") echo "DOWN" ;;
-                "[C") echo "RIGHT" ;;
-                "[D") echo "LEFT" ;;
-                "[H") echo "HOME" ;;
-                "[F") echo "END" ;;
-                "") echo "ESC" ;;
-                *) echo "$choice$rest" ;;
-            esac
-            ;;
-        "") echo "ENTER" ;;
-        *) echo "$choice" ;;
-    esac
+      # Check if timeout is disabled
+      if [[ "${SESSION_TIMEOUT_ENABLED:-true}" != "true" ]]; then
+          timeout=0  # No timeout
+      fi
+
+      # Read single character to handle navigation keys and Enter
+      while true; do
+          local char=""
+          local read_success=false
+
+          # Read single character with timeout - reduced timeout for less flickering
+          if [[ $timeout -eq 0 ]]; then
+              # No timeout - wait indefinitely
+              if read -n1 -s -t 0.05 char; then
+                  read_success=true
+              fi
+          elif read -t "$timeout" -n1 -s char; then
+              read_success=true
+          else
+              # Timeout occurred - silent timeout, no message
+              echo "timeout"
+              return
+          fi
+
+          if [[ "$read_success" == "true" ]]; then
+              case "$char" in
+                  $'\e')  # Escape sequence start
+                      read -t 0.05 -n2 -s rest
+                      case "$rest" in
+                          "[A") echo "UP" ; return ;;
+                          "[B") echo "DOWN" ; return ;;
+                          "[C") echo "RIGHT" ; return ;;
+                          "[D") echo "LEFT" ; return ;;
+                          "[H") echo "HOME" ; return ;;
+                          "[F") echo "END" ; return ;;
+                          "") echo "ESC" ; return ;;
+                          *) echo "$char$rest" ; return ;;
+                      esac
+                      ;;
+                  "")  # Enter key
+                      echo "ENTER"
+                      return
+                      ;;
+                  d|D|s|S|r|R|q|Q)  # Footer command keys
+                      echo "$char"
+                      return
+                      ;;
+                  *)  # Other character - ignore (no number input allowed)
+                      # Silently ignore all other input including numbers
+                      continue
+                      ;;
+              esac
+          fi
+      done
 }
 
 # Handle keyboard input
@@ -878,8 +890,7 @@ menu_loop_classic() {
         # Handle special cases
         case $choice in
             "timeout")
-                echo -e "\n${warning_color}Session timeout. Refreshing...${NC}"
-                sleep 2
+                # Silent timeout - no message, just refresh
                 continue
                 ;;
             "q"|"Q"|"quit"|"exit")
@@ -889,9 +900,6 @@ menu_loop_classic() {
                 # Dashboard
                 if declare -f cmd_dashboard >/dev/null; then
                     cmd_dashboard
-                else
-                    echo -e "\n${error_color}Dashboard not available${NC}"
-                    sleep 2
                 fi
                 continue
                 ;;
@@ -899,9 +907,6 @@ menu_loop_classic() {
                 # Quick status
                 if declare -f cmd_quick_status >/dev/null; then
                     cmd_quick_status
-                else
-                    echo -e "\n${error_color}Quick status not available${NC}"
-                    sleep 2
                 fi
                 continue
                 ;;
@@ -919,12 +924,8 @@ menu_loop_classic() {
                 ;;
         esac
 
-        # Handle numeric input
-        if [[ "$choice" =~ ^[0-9]+$ ]] && validate_numeric_input "$choice" "$max_selection"; then
-            selected_index=$((choice - 1))
-            execute_menu_item "$selected_index"
-        elif [[ "$choice" == "ENTER" ]]; then
-            # Enter key pressed - execute selected item
+        # Handle Enter key pressed - execute selected item
+        if [[ "$choice" == "ENTER" ]]; then
             execute_menu_item "$selected_index"
         else
             # Handle arrow keys and other navigation
@@ -935,15 +936,8 @@ menu_loop_classic() {
                 selected_index=$new_selection
                 # Navigation changed - continue to next iteration without waiting
             else
-                # Check if it's a valid single character that should be ignored
-                if [[ ${#choice} -eq 1 ]] && [[ ! "$choice" =~ ^[0-9]$ ]]; then
-                    # Single non-numeric character - ignore silently
-                    continue
-                else
-                    echo -e "\n${error_color}Invalid choice: $choice${NC}"
-                    echo -e "${error_color}Please enter a number between 1 and $max_selection${NC}"
-                    sleep 2
-                fi
+                # Ignore all other input silently
+                continue
             fi
         fi
     done
@@ -951,109 +945,88 @@ menu_loop_classic() {
 
 # Menu loop para modo jerárquico (auto-detectado)
 menu_loop_hierarchical() {
-    echo "DEBUG: menu_loop_hierarchical called" >> /tmp/hierarchical_debug.log
-    local selected_index=0
+     local selected_index=0
 
-    while true; do
-        # Generar menú basado en directorio actual
-        local current_dir=$(get_current_path_string)
-        echo "DEBUG: current_dir=$current_dir" >> /tmp/hierarchical_debug.log
-        generate_directory_menu "$current_dir"
+     while true; do
+         # Generar menú basado en directorio actual
+         local current_dir=$(get_current_path_string)
+         generate_directory_menu "$current_dir"
 
-        local max_selection=${#menu_options[@]}
+         local max_selection=${#menu_options[@]}
 
-        # Si no hay opciones, mostrar mensaje y continuar
-        if [[ $max_selection -eq 0 ]]; then
-            clear_screen
-            display_header
-            echo ""
-            echo -e "${warning_color}No items found in this directory${NC}"
-            echo ""
-            echo -e "${success_color}Press Enter to go back...${NC}"
-            read -s
-            handle_navigation "navigate_up"
-            continue
-        fi
+         # Si no hay opciones, mostrar mensaje y continuar
+         if [[ $max_selection -eq 0 ]]; then
+             clear_screen
+             display_header
+             echo ""
+             echo -e "${warning_color}No items found in this directory${NC}"
+             echo ""
+             echo -e "${success_color}Press Enter to go back...${NC}"
+             read -s
+             handle_navigation "navigate_up"
+             continue
+         fi
 
-        # Mostrar menú con breadcrumb en header
-        display_header
-        display_menu "$selected_index"
-        display_footer
+         # Mostrar menú con breadcrumb en header
+         display_header
+         display_menu "$selected_index"
+         display_footer
 
-        # Get user input
-        local choice
-        choice=$(read_input)
+         # Get user input
+         local choice
+         choice=$(read_input)
 
-        # Handle special cases
-        case $choice in
-            "timeout")
-                echo -e "\n${warning_color}Session timeout. Refreshing...${NC}"
-                sleep 2
-                continue
-                ;;
-            "q"|"Q"|"quit"|"exit")
-                exit_menu
-                ;;
-            "d"|"D")
-                # Dashboard
-                if declare -f cmd_dashboard >/dev/null; then
-                    cmd_dashboard
-                else
-                    echo -e "\n${error_color}Dashboard not available${NC}"
-                    sleep 2
-                fi
-                continue
-                ;;
-            "s"|"S")
-                # Quick status
-                if declare -f cmd_quick_status >/dev/null; then
-                    cmd_quick_status
-                else
-                    echo -e "\n${error_color}Quick status not available${NC}"
-                    sleep 2
-                fi
-                continue
-                ;;
-            "r"|"R"|"refresh")
-                # Refresh menu
-                continue
-                ;;
-            "")
-                # No input, continue
-                continue
-                ;;
-        esac
+         # Handle special cases
+         case $choice in
+             "timeout")
+                 # Silent timeout - no message, just refresh
+                 continue
+                 ;;
+             "q"|"Q"|"quit"|"exit")
+                 exit_menu
+                 ;;
+             "d"|"D")
+                 # Dashboard
+                 if declare -f cmd_dashboard >/dev/null; then
+                     cmd_dashboard
+                 fi
+                 continue
+                 ;;
+             "s"|"S")
+                 # Quick status
+                 if declare -f cmd_quick_status >/dev/null; then
+                     cmd_quick_status
+                 fi
+                 continue
+                 ;;
+             "r"|"R"|"refresh")
+                 # Refresh menu
+                 continue
+                 ;;
+             "")
+                 # No input, continue
+                 continue
+                 ;;
+         esac
 
-        # Handle numeric input
-        if [[ "$choice" =~ ^[0-9]+$ ]] && validate_numeric_input "$choice" "$max_selection"; then
-            selected_index=$((choice - 1))
-            local command="${menu_commands[$selected_index]}"
-            handle_navigation "$command"
-        elif [[ "$choice" == "ENTER" ]]; then
-            # Enter key pressed - execute selected item
-            local command="${menu_commands[$selected_index]}"
-            handle_navigation "$command"
-        else
-            # Handle arrow keys and other navigation
-            local new_selection
-            new_selection=$(handle_keyboard_input "$choice" "$selected_index" "$max_selection")
+         # Handle Enter key pressed - execute selected item
+         if [[ "$choice" == "ENTER" ]]; then
+             local command="${menu_commands[$selected_index]}"
+             handle_navigation "$command"
+         else
+             # Handle arrow keys and other navigation
+             local new_selection
+             new_selection=$(handle_keyboard_input "$choice" "$selected_index" "$max_selection")
 
-            if [[ $new_selection -ne $selected_index ]]; then
-                selected_index=$new_selection
-                # Navigation changed - continue to next iteration without waiting
-            else
-                # Check if it's a valid single character that should be ignored
-                if [[ ${#choice} -eq 1 ]] && [[ ! "$choice" =~ ^[0-9]$ ]]; then
-                    # Single non-numeric character - ignore silently
-                    continue
-                else
-                    echo -e "\n${error_color}Invalid choice: $choice${NC}"
-                    echo -e "${error_color}Please enter a number between 1 and $max_selection${NC}"
-                    sleep 2
-                fi
-            fi
-        fi
-    done
+             if [[ $new_selection -ne $selected_index ]]; then
+                 selected_index=$new_selection
+                 # Navigation changed - continue to next iteration without waiting
+             else
+                 # Ignore all other input silently
+                 continue
+             fi
+         fi
+     done
 }
 
 # Registra scripts externos como entradas de menú

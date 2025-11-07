@@ -1013,7 +1013,8 @@ menu_loop() {
     # Determinar si usar modo jerárquico
     local use_hierarchical=false
     if [[ "${ENABLE_AUTO_SCAN:-true}" == "true" ]]; then
-        if [[ ${#AUTO_SCRIPTS[@]} -gt 0 ]]; then
+        # Only check AUTO_SCRIPTS if auto-scan is enabled
+        if declare -p AUTO_SCRIPTS >/dev/null 2>&1 && [[ ${#AUTO_SCRIPTS[@]} -gt 0 ]]; then
             use_hierarchical=true
             if declare -f log_info >/dev/null; then
                 log_info "Using hierarchical menu mode"

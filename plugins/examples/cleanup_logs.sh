@@ -1,4 +1,3 @@
-
 #!/bin/bash
 echo "🧹 System Logs Cleanup"
 echo "======================"

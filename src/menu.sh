@@ -222,9 +222,8 @@ generate_directory_menu() {
     local scripts_to_sort=()
 
     if [[ -z "$current_dir" ]]; then
-        # Directorio raíz: mostrar solo directorios de nivel superior
-        # Hardcode directories for testing
-        dirs_to_sort=("paqueteria" "examples")
+        # Directorio raíz: escanear dinámicamente directorios de nivel superior
+        scan_root_directories
         found_items=true
     else
         # Subdirectorio: mostrar subdirectorios y scripts que pertenecen a este directorio
@@ -437,6 +436,58 @@ get_breadcrumb() {
     else
         echo "Root/${current_path[*]}"
         echo "${current_path[*]// /\/}"
+    fi
+}
+
+# Escanear dinámicamente directorios en el directorio raíz de plugins
+scan_root_directories() {
+    local plugins_dir="${PLUGINS_DIR:-$PROJECT_ROOT/plugins}"
+
+    if [[ ! -d "$plugins_dir" ]]; then
+        if declare -f log_warn >/dev/null; then
+            log_warn "Plugins directory not found: $plugins_dir"
+        fi
+        return
+    fi
+
+    # Limpiar directorios anteriores del array
+    dirs_to_sort=()
+
+    # Escanear directorios en tiempo real
+    while IFS= read -r -d '' dir_path; do
+        # Obtener solo el nombre del directorio (no la ruta completa)
+        local dir_name=$(basename "$dir_path")
+
+        # Verificar que sea un directorio y no esté vacío
+        if [[ -d "$dir_path" ]] && [[ -n "$dir_name" ]]; then
+            # Verificar que no sea un directorio oculto (que empiece con .)
+            if [[ "$dir_name" != .* ]]; then
+                # Verificar que tenga al menos un script ejecutable
+                if directory_has_scripts "$dir_path"; then
+                    dirs_to_sort+=("$dir_name")
+
+                    if declare -f log_debug >/dev/null; then
+                        log_debug "Found plugin directory: $dir_name"
+                    fi
+                fi
+            fi
+        fi
+    done < <(find "$plugins_dir" -maxdepth 1 -type d -print0 | sort -z)
+
+    if declare -f log_info >/dev/null; then
+        log_info "Scanned ${#dirs_to_sort[@]} plugin directories"
+    fi
+}
+
+# Verificar si un directorio contiene scripts ejecutables
+directory_has_scripts() {
+    local dir_path="$1"
+
+    # Buscar archivos ejecutables que no sean directorios ocultos
+    if find "$dir_path" -maxdepth 1 -type f -executable -not -name ".*" | grep -q .; then
+        return 0
+    else
+        return 1
     fi
 }
 
@@ -1381,6 +1432,8 @@ export -f execute_auto_script
 export -f show_no_scripts_message
 export -f get_current_path_string
 export -f get_breadcrumb
+export -f scan_root_directories
+export -f directory_has_scripts
 
 # Fallback logging functions (if not already defined)
 # These respect DEBUG_MODE to avoid unwanted output

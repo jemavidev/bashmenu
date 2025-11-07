@@ -136,6 +136,9 @@ initialize_menu() {
     # Initialize script name mapping
     SCRIPT_NAME_MAPPING=()
     SCRIPT_LEVEL_MAPPING=()
+
+    # Load custom mappings from scripts.conf if they exist
+    load_script_mappings
 }
 
 # =============================================================================
@@ -507,6 +510,45 @@ directory_has_scripts() {
     else
         return 1
     fi
+}
+
+# Load custom script mappings from scripts.conf
+load_script_mappings() {
+    local config_file="${CONFIG_DIR:-$PROJECT_ROOT/config}/scripts.conf"
+
+    if [[ ! -f "$config_file" ]]; then
+        return 0
+    fi
+
+    # Read the file and look for mapping lines
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        # Skip comments and empty lines
+        [[ "$line" =~ ^# ]] && continue
+        [[ -z "$line" ]] && continue
+
+        # Look for mapping assignments
+        if [[ "$line" =~ ^SCRIPT_NAME_MAPPING\[ ]]; then
+            # Extract the mapping: SCRIPT_NAME_MAPPING["key"]="value"
+            if [[ "$line" =~ SCRIPT_NAME_MAPPING\[\"([^\"]+)\"\]=\"([^\"]+)\" ]]; then
+                local key="${BASH_REMATCH[1]}"
+                local value="${BASH_REMATCH[2]}"
+                SCRIPT_NAME_MAPPING["$key"]="$value"
+                if declare -f log_debug >/dev/null; then
+                    log_debug "Loaded name mapping: $key -> $value"
+                fi
+            fi
+        elif [[ "$line" =~ ^SCRIPT_LEVEL_MAPPING\[ ]]; then
+            # Extract the mapping: SCRIPT_LEVEL_MAPPING["key"]="value"
+            if [[ "$line" =~ SCRIPT_LEVEL_MAPPING\[\"([^\"]+)\"\]=\"([^\"]+)\" ]]; then
+                local key="${BASH_REMATCH[1]}"
+                local value="${BASH_REMATCH[2]}"
+                SCRIPT_LEVEL_MAPPING["$key"]="$value"
+                if declare -f log_debug >/dev/null; then
+                    log_debug "Loaded level mapping: $key -> $value"
+                fi
+            fi
+        fi
+    done < "$config_file"
 }
 
 # Get better display name for scripts
@@ -1504,6 +1546,7 @@ export -f get_breadcrumb
 export -f scan_root_directories
 export -f directory_has_scripts
 export -f get_script_display_name
+export -f load_script_mappings
 
 # Fallback logging functions (if not already defined)
 # These respect DEBUG_MODE to avoid unwanted output

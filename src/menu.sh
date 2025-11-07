@@ -1026,7 +1026,7 @@ menu_loop() {
     fi
 
     # Force hierarchical mode for testing
-    use_hierarchical=true
+    use_hierarchical=false
     echo "DEBUG: use_hierarchical=$use_hierarchical, AUTO_SCRIPTS count=${#AUTO_SCRIPTS[@]}" >> /tmp/menu_loop_debug.log
 
     if [[ "$use_hierarchical" == "true" ]]; then

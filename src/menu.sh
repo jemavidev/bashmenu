@@ -123,6 +123,9 @@ initialize_menu() {
         local total_items=$(( ${#menu_options[@]} + ${#AUTO_SCRIPTS[@]} ))
         log_info "Menu initialized with $total_items items (manual: ${#menu_options[@]}, auto: $(count_auto_scripts))"
     fi
+
+    # Initialize SCRIPT_ENTRIES as empty array to prevent unbound variable error
+    SCRIPT_ENTRIES=()
 }
 
 # =============================================================================

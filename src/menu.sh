@@ -103,6 +103,14 @@ initialize_menu() {
         fi
     fi
 
+    # Add manual menu items only if not using hierarchical mode
+    local manual_items_added=false
+    if [[ "${ENABLE_AUTO_SCAN:-true}" != "true" ]]; then
+        # Always add Exit as the last option for classic mode
+        add_menu_item "Exit" "exit_menu" "Exit the menu" 1
+        manual_items_added=true
+    fi
+
     # Auto-scan plugin directories if enabled
     if [[ "${ENABLE_AUTO_SCAN:-true}" == "true" ]]; then
         echo "DEBUG: ENABLE_AUTO_SCAN is true, calling scan_plugin_directories" >> /tmp/bashmenu_menu_debug.log
@@ -123,13 +131,6 @@ initialize_menu() {
         echo "DEBUG: ENABLE_AUTO_SCAN is not true: ${ENABLE_AUTO_SCAN:-true}" >> /tmp/bashmenu_menu_debug.log
     fi
 
-    # Add manual menu items only if not using hierarchical mode
-    local manual_items_added=false
-    if [[ "${ENABLE_AUTO_SCAN:-true}" != "true" ]]; then
-        # Always add Exit as the last option for classic mode
-        add_menu_item "Exit" "exit_menu" "Exit the menu" 1
-        manual_items_added=true
-    fi
 
     if declare -f log_info >/dev/null; then
         local auto_count=0

@@ -339,11 +339,11 @@ generate_directory_menu() {
             done
 
             if [[ -n "$manual_config" ]]; then
-                # Use manual configuration
+                # Use manual configuration - this takes precedence over mappings
                 IFS='|' read -r display_name _ script_desc script_level _ <<< "$manual_config"
                 add_menu_item "$display_name" "execute_script:$script_path" "$script_desc" "$script_level"
             else
-                # Use auto-detected configuration
+                # Use auto-detected configuration with optional mapping
                 local script_desc="${AUTO_SCRIPTS[${script_key}_description]}"
                 local script_level="${AUTO_SCRIPTS[${script_key}_level]}"
 
@@ -1195,7 +1195,41 @@ menu_loop_hierarchical() {
          # Handle Enter key pressed - execute selected item
          if [[ "$choice" == "ENTER" ]]; then
              local command="${menu_commands[$selected_index]}"
-             handle_navigation "$command"
+             if [[ "$command" =~ ^execute_script: ]]; then
+                 # Execute script directly
+                 local script_path="${command#execute_script:}"
+                 if validate_script_path "$script_path"; then
+                     echo "Executing: $script_path"
+                     echo ""
+                     log_command "$script_path" "started"
+
+                     if "$script_path"; then
+                         echo ""
+                         print_success "Script completed successfully"
+                         log_command "$script_path" "success"
+                     else
+                         local exit_code=$?
+                         echo ""
+                         print_error "Script failed with exit code: $exit_code"
+                         log_command "$script_path" "failed (exit code: $exit_code)"
+                     fi
+                     echo ""
+                     echo -e "${info_color}Press Enter to continue...${NC}"
+                     read -s
+                 else
+                     print_error "Script validation failed: $script_path"
+                     log_error "Script validation failed: $script_path"
+                     echo ""
+                     echo -e "${info_color}Press Enter to continue...${NC}"
+                     read -s
+                 fi
+             elif [[ "$command" =~ ^execute_auto: ]]; then
+                 # Execute auto-detected script
+                 handle_navigation "$command"
+             else
+                 # Handle navigation commands
+                 handle_navigation "$command"
+             fi
          else
              # Handle arrow keys and other navigation
              local new_selection

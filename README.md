@@ -52,6 +52,16 @@ sudo ./install.sh
 bashmenu
 ```
 
+### Development Installation (Current Setup)
+```bash
+# For development/testing (no installation needed)
+cd /home/stk/GIT/Bashmenu
+
+# Make executable and run directly
+chmod +x bashmenu
+./bashmenu
+```
+
 ### User Installation
 ```bash
 # Install for current user only
@@ -107,7 +117,7 @@ bashmenu/
 ├── src/                        # Source code
 │   ├── main.sh                # Main entry point
 │   ├── utils.sh               # Utility functions
-│   ├── menu.sh                # Menu system
+│   ├── menu.sh                # Menu system (HIERARCHICAL)
 │   ├── logger.sh              # Logging system
 │   ├── commands.sh            # System commands
 │   ├── script_loader.sh       # External scripts loader
@@ -118,10 +128,25 @@ bashmenu/
 │   ├── scripts.conf           # External scripts config
 │   └── scripts.conf.example   # Configuration example
 ├── plugins/                    # Scripts directory
-│   └── examples/              # Example scripts
-│       ├── git_operations.sh  # Git management
-│       └── docker_manager.sh  # Docker management
-└── README.md                   # Main documentation
+│   ├── examples/              # Example scripts (auto-detected)
+│   │   ├── cleanup_logs.sh    # Log cleanup utility
+│   │   ├── monitor_resources.sh # Resource monitoring
+│   │   └── backup_system.sh   # System backup
+│   └── paqueteria/            # Production scripts (manual config)
+│       ├── 01_deploy_production.sh # Production deployment
+│       ├── 02_pull_only.sh    # Code updates
+│       ├── 03_rollback.sh     # Rollback operations
+│       ├── 04_status_logs.sh  # Monitoring & logs
+│       ├── 05_health_check.sh # Health verification
+│       ├── 06_restart_app.sh  # Service restart
+│       ├── 07_git_push.sh     # Git operations
+│       ├── 08_verify_system.sh # System diagnostics
+│       └── common.sh          # Shared functions
+├── OPORTUNIDAD DE MEJORAS.md   # Improvement roadmap
+├── CONTRIBUTING.md            # Contribution guidelines
+├── EXAMPLES.md                # Usage examples
+├── LICENSE                    # MIT License
+└── README.md                  # Main documentation
 ```
 
 ## 🔧 Configuration
@@ -130,18 +155,42 @@ bashmenu/
 
 ```bash
 # Menu Settings
-MENU_TITLE="System Administration Menu"
+MENU_TITLE="SAM - System Administration Menu"
 ENABLE_COLORS=true
+AUTO_REFRESH=false
+SHOW_TIMESTAMP=true
 DEFAULT_THEME="modern"
 
 # Logging Settings
 LOG_LEVEL=1
 LOG_FILE="/tmp/bashmenu.log"
-DEBUG_MODE=false
+DEBUG_MODE=true
+ENABLE_HISTORY=true
 
 # Security Settings
 ENABLE_PERMISSIONS=false
-ALLOWED_SCRIPT_DIRS="/opt/bashmenu/plugins:/opt/scripts:/usr/local/bin"
+ENABLE_PLUGINS=true
+PLUGIN_DIR="$PROJECT_ROOT/plugins"
+ALLOWED_SCRIPT_DIRS="/opt/bashmenu/plugins:/opt/scripts:/usr/local/bin:/home/stk/GIT/Bashmenu/plugins"
+
+# Plugin Auto-Scan Settings
+ENABLE_AUTO_SCAN=false
+ENABLE_MANUAL_SCRIPTS=true
+PLUGIN_SCAN_DEPTH=3
+PLUGIN_EXTENSIONS=".sh"
+```
+
+### Scripts Configuration File (`config/scripts.conf`)
+
+```bash
+# Manual script configuration (highest priority)
+🚀 Deploy to Production|/home/stk/GIT/Bashmenu/plugins/paqueteria/01_deploy_production.sh|Deploy, hot reload or server setup|1|
+📥 Update Code|/home/stk/GIT/Bashmenu/plugins/paqueteria/02_pull_only.sh|Pull from GitHub without rebuild|1|
+
+# Auto-detected script name mappings (optional, for auto-scanned scripts)
+SCRIPT_NAME_MAPPING["cleanup_logs.sh"]="🔍 JMV"
+SCRIPT_NAME_MAPPING["monitor_resources.sh"]="📊 Monitor Resources"
+SCRIPT_NAME_MAPPING["backup_system.sh"]="💾 System Backup"
 ```
 
 ## 📝 External Scripts System
@@ -157,6 +206,8 @@ bashmenu
 You'll see Git and Docker scripts in the menu, ready to use.
 
 ### Add Your Own Scripts
+
+#### **Option 1: Manual Configuration (Recommended for Important Scripts)**
 
 1. **Create your script**:
 ```bash
@@ -181,10 +232,20 @@ sudo nano /opt/bashmenu/config/scripts.conf
 
 Add this line:
 ```
-My Script|/opt/bashmenu/plugins/my_script.sh|My custom script|1|
+🚀 My Script|/opt/bashmenu/plugins/my_script.sh|My custom script description|1|
 ```
 
 4. **Run Bashmenu** - your script will appear in the menu!
+
+#### **Option 2: Auto-Detection with Custom Names**
+
+For scripts that appear automatically, you can customize their display names:
+
+```bash
+# In scripts.conf, add mappings for auto-detected scripts:
+SCRIPT_NAME_MAPPING["my_script.sh"]="🚀 My Custom Script Name"
+SCRIPT_NAME_MAPPING["another_script.sh"]="📊 Another Custom Name"
+```
 
 ### Configuration Format
 
@@ -194,37 +255,54 @@ The `scripts.conf` file uses a pipe-separated format:
 Display Name|Absolute Path|Description|Level|Parameters
 ```
 
-**Example:**
+**Examples:**
 ```bash
-# Git operations
-Git Pull|/opt/bashmenu/plugins/examples/git_operations.sh|Pull latest changes|1|pull
-Git Status|/opt/bashmenu/plugins/examples/git_operations.sh|Show repo status|1|status
+# Manual configuration (complete control)
+🚀 Deploy Production|/opt/bashmenu/plugins/deploy.sh|Deploy to production server|3|production
+📊 System Monitor|/opt/bashmenu/plugins/monitor.sh|Monitor system resources|1|
 
-# Docker operations
-Docker PS|/opt/bashmenu/plugins/examples/docker_manager.sh|Show containers|1|ps
-Docker Logs|/opt/bashmenu/plugins/examples/docker_manager.sh|Show container logs|1|logs
-
-# Custom scripts
-Backup DB|/opt/bashmenu/plugins/backup_db.sh|Backup database|2|
-Deploy App|/opt/bashmenu/plugins/deploy.sh|Deploy to production|3|production
+# Auto-detected script name mappings (optional)
+SCRIPT_NAME_MAPPING["cleanup_logs.sh"]="🧹 Log Cleanup"
+SCRIPT_NAME_MAPPING["backup_system.sh"]="💾 System Backup"
 ```
+
+### System Architecture
+
+Bashmenu uses a **hybrid configuration system**:
+
+#### **Manual Configuration Scripts:**
+- Full control over name, description, and permissions
+- Higher priority than auto-detection
+- Best for critical/production scripts
+
+#### **Auto-Detected Scripts:**
+- Automatically discovered from plugin directories
+- Use filename-based names (with optional custom mappings)
+- Perfect for development/testing scripts
+
+#### **Priority Order:**
+1. **Manual Configuration** (highest priority)
+2. **Custom Mappings** (for auto-detected scripts)
+3. **Auto-Generated Names** (fallback)
 
 ### Example Scripts Included
 
-#### 1. Git Operations (`git_operations.sh`)
-Manage Git repositories with common operations:
-- `status` - Show repository status ✅ *Enabled by default*
-- `pull` - Pull latest changes ✅ *Enabled by default*
-- `log` - Show recent commits
-- `branch` - Show branch information
+#### 1. Paquetería Scripts (Manual Configuration)
+Production-ready scripts with custom names and descriptions:
+- `🚀 Deploy to Production` - Deploy, hot reload or server setup
+- `📥 Update Code` - Pull from GitHub without rebuild
+- `⬆️ Push Changes` - Controlled commit and push to repository
+- `↩️ Rollback Changes` - Rollback to previous commit or tag
+- `📊 Status & Logs` - Monitoring, tail and log streaming
+- `🔄 Restart Services` - Restart containers, systemd or Nginx
+- `🏥 Health Check` - Comprehensive service verification
+- `🔍 System Diagnostic` - Complete server diagnostic
 
-#### 2. Docker Manager (`docker_manager.sh`)
-Manage Docker containers and images:
-- `ps` - Show running containers ✅ *Enabled by default*
-- `logs` - Show container logs ✅ *Enabled by default*
-- `build` - Build containers
-- `restart` - Restart containers
-- `images` - List Docker images
+#### 2. Examples Scripts (Auto-Detected with Mappings)
+Development scripts with custom display names:
+- `🔍 JMV` - Log cleanup utility
+- `📊 Monitor Resources` - System resource monitoring
+- `💾 System Backup` - Backup system files
 
 ## 🎨 Themes
 
@@ -234,7 +312,7 @@ Manage Docker containers and images:
 2. **Dark**: Dark mode with purple accents
 3. **Colorful**: Bright colors with double-line frames
 4. **Minimal**: Clean, minimal interface
-5. **Modern**: Modern look with 256-color support
+5. **Modern**: Modern look with 256-color support (current default)
 
 ### Change Theme
 
@@ -245,6 +323,11 @@ bashmenu --theme dark
 # Or edit config.conf
 DEFAULT_THEME="dark"
 ```
+
+### Current Theme Configuration
+- **Default Theme**: `modern`
+- **Colors**: Enabled
+- **Timestamp**: Enabled in header
 
 ## 🔒 Security Features
 
@@ -423,6 +506,30 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **JESUS MARIA VILLALOBOS**
+
+## 📋 Recent Updates (v2.1)
+
+### ✅ **Implemented Features**
+
+- **Hierarchical Menu System**: Navigate scripts by directory structure
+- **Hybrid Configuration**: Manual + auto-detected scripts with priority system
+- **Script Name Mappings**: Custom display names for auto-detected scripts
+- **Enhanced Security**: Path validation and permission controls
+- **Modern UI**: Updated themes and improved user experience
+
+### 🔧 **Technical Improvements**
+
+- Fixed AUTO_SCRIPTS unbound variable error
+- Improved script execution logic for different command types
+- Enhanced logging and debugging capabilities
+- Updated configuration with current settings
+
+### 📁 **Current Project Structure**
+
+- **Scripts Directory**: `plugins/` with `paqueteria/` and `examples/` subdirectories
+- **Configuration**: Hybrid system with manual config taking precedence
+- **Theme**: Modern theme with colors and timestamps enabled
+- **Auto-scan**: Disabled (manual configuration preferred for production)
 
 ## 🙏 Acknowledgments
 

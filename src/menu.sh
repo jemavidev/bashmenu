@@ -325,16 +325,36 @@ generate_directory_menu() {
         done
 
         if [[ -n "$script_key" ]]; then
-            local script_desc="${AUTO_SCRIPTS[${script_key}_description]}"
-            local script_level="${AUTO_SCRIPTS[${script_key}_level]}"
+            local script_path="${AUTO_SCRIPTS[${script_key}_path]}"
 
-            # Get better display name from mapping or use filename transformation
-            local display_name=$(get_script_display_name "$script_name")
+            # Check if this script has manual configuration in SCRIPT_ENTRIES
+            local manual_config=""
+            for entry_name in "${!SCRIPT_ENTRIES[@]}"; do
+                local entry="${SCRIPT_ENTRIES[$entry_name]}"
+                IFS='|' read -r entry_path entry_desc entry_level entry_params <<< "$entry"
+                if [[ "$entry_path" == "$script_path" ]]; then
+                    manual_config="$entry_name|$entry_path|$entry_desc|$entry_level|$entry_params"
+                    break
+                fi
+            done
 
-            # Get level from mapping or use default
-            local script_level="${SCRIPT_LEVEL_MAPPING[$script_name]:-1}"
+            if [[ -n "$manual_config" ]]; then
+                # Use manual configuration
+                IFS='|' read -r display_name _ script_desc script_level _ <<< "$manual_config"
+                add_menu_item "$display_name" "execute_script:$script_path" "$script_desc" "$script_level"
+            else
+                # Use auto-detected configuration
+                local script_desc="${AUTO_SCRIPTS[${script_key}_description]}"
+                local script_level="${AUTO_SCRIPTS[${script_key}_level]}"
 
-            add_menu_item "$display_name" "execute_auto:$script_key" "$script_desc" "$script_level"
+                # Get better display name from mapping or use filename transformation
+                local display_name=$(get_script_display_name "$script_name")
+
+                # Get level from mapping or use default
+                script_level="${SCRIPT_LEVEL_MAPPING[$script_name]:-$script_level}"
+
+                add_menu_item "$display_name" "execute_auto:$script_key" "$script_desc" "$script_level"
+            fi
         fi
     done
 

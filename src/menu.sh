@@ -83,11 +83,6 @@ initialize_menu() {
             if declare -f load_script_config >/dev/null; then
                 load_script_config "$scripts_config"
 
-                # Register external scripts as menu items
-                if declare -f register_external_scripts >/dev/null; then
-                    register_external_scripts
-                fi
-
                 if declare -f log_info >/dev/null; then
                     log_info "Manual scripts loaded: ${#SCRIPT_ENTRIES[@]}"
                 fi
@@ -101,6 +96,14 @@ initialize_menu() {
         if declare -f log_info >/dev/null; then
             log_info "Manual scripts loading disabled by configuration"
         fi
+    fi
+
+    # Load custom mappings from scripts.conf if they exist
+    load_script_mappings
+
+    # Register scripts as menu items after loading mappings
+    if declare -f register_external_scripts >/dev/null; then
+        register_external_scripts
     fi
 
     # Add manual menu items only if not using hierarchical mode
@@ -140,16 +143,6 @@ initialize_menu() {
         local total_items=$(( ${#menu_options[@]} + auto_count ))
         log_info "Menu initialized with $total_items items (manual: ${#menu_options[@]}, auto: $auto_count)"
     fi
-
-    # Initialize SCRIPT_ENTRIES as empty array to prevent unbound variable error
-    SCRIPT_ENTRIES=()
-
-    # Initialize script name mapping
-    SCRIPT_NAME_MAPPING=()
-    SCRIPT_LEVEL_MAPPING=()
-
-    # Load custom mappings from scripts.conf if they exist
-    load_script_mappings
 }
 
 # =============================================================================
@@ -1033,8 +1026,6 @@ menu_loop() {
         fi
     fi
 
-    # Force hierarchical mode for testing
-    use_hierarchical=false
     echo "DEBUG: use_hierarchical=$use_hierarchical, AUTO_SCRIPTS count=${#AUTO_SCRIPTS[@]}" >> /tmp/menu_loop_debug.log
 
     if [[ "$use_hierarchical" == "true" ]]; then
@@ -1203,14 +1194,9 @@ menu_loop_hierarchical() {
 
 # Registra scripts externos como entradas de menú
 register_external_scripts() {
-    # Initialize SCRIPT_ENTRIES as empty array if not already done
-    if [[ -z "${SCRIPT_ENTRIES:-}" ]]; then
-        SCRIPT_ENTRIES=()
-    fi
-
     if [[ ${#SCRIPT_ENTRIES[@]} -eq 0 ]]; then
         if declare -f log_debug >/dev/null; then
-            log_debug "No external scripts to register"
+            log_debug "No external scripts to register (SCRIPT_ENTRIES is empty)"
         fi
         return 0
     fi

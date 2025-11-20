@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="${PAQUETERIA_PROJECT_DIR:-/opt/paqueteria/Paqueteria-v4.0}"
+PROJECT_DIR="${PAQUETERIA_PROJECT_DIR:-$HOME/paqueteria}"
 DEPLOY_DIR="$PROJECT_DIR/SCRIPTS/deployment"
 
 INFO_COLOR="\033[0;34m"

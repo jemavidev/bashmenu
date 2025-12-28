@@ -6,6 +6,23 @@
 #
 # Usage: ./docker-stop.sh
 #
+# This script provides safe container management with:
+# - Interactive container selection
+# - Graceful shutdown with timeout
+# - Force kill for unresponsive containers
+# - Optional container removal
+# - Volume removal options
+# - Safety confirmations for destructive actions
+#
+# Examples:
+#   ./docker-stop.sh  # Interactive mode
+#
+# Safety features:
+#   - Shows container details before stopping
+#   - Confirms destructive actions
+#   - Graceful stop before force kill
+#   - Progress reporting
+#
 
 set -euo pipefail
 
@@ -80,37 +97,61 @@ confirm_destructive() {
 
 list_running_containers() {
     local -n containers=$1
-    
-    print_info "Loading running containers..."
-    
+
+    print_info "🔍 Scanning for running containers..."
+
     local count=0
     while IFS='|' read -r id name image status; do
         containers+=("$id|$name|$image|$status")
         ((count++))
     done < <(docker ps --format "{{.ID}}|{{.Names}}|{{.Image}}|{{.Status}}")
-    
+
     if [ $count -eq 0 ]; then
-        print_warning "No running containers found"
+        print_warning "⚠️ No running containers found"
+        print_info "💡 Use 'docker ps -a' to see all containers (including stopped)"
         return 1
     fi
-    
-    print_success "Found $count running container(s)"
+
+    print_success "✅ Found $count running container(s)"
+
+    # Show system info
+    local total_containers=$(docker ps -a -q | wc -l)
+    local stopped_containers=$((total_containers - count))
+    if [ $stopped_containers -gt 0 ]; then
+        print_info "📊 System status: $count running, $stopped_containers stopped"
+    fi
+
     return 0
 }
 
 display_containers() {
     local -n containers=$1
-    
-    print_info "Running Containers:"
+
+    print_info "🏃 Running Containers:"
     echo ""
     printf "  %-4s %-15s %-25s %-30s %s\n" "NUM" "ID" "NAME" "IMAGE" "STATUS"
     print_separator
-    
+
     for i in "${!containers[@]}"; do
         IFS='|' read -r id name image status <<< "${containers[$i]}"
-        printf "  %-4s %-15s %-25s %-30s %s\n" "$((i+1))" "${id:0:12}" "$name" "${image:0:28}" "$status"
+
+        # Color code status
+        local status_display="$status"
+        if [[ "$status" =~ ^Up ]]; then
+            status_display="${GREEN}$status${NC}"
+        elif [[ "$status" =~ ^Exited ]]; then
+            status_display="${RED}$status${NC}"
+        fi
+
+        printf "  %-4s %-15s %-25s %-30s %b\n" "$((i+1))" "${id:0:12}" "$name" "${image:0:28}" "$status_display"
     done
     echo ""
+
+    # Show additional info
+    print_info "💡 Selection tips:"
+    echo "  • Enter numbers: '1 3 5' to select specific containers"
+    echo "  • Enter 'all' to select all containers"
+    echo "  • Enter '0' to cancel"
 }
 
 # ============================================================================
@@ -120,44 +161,48 @@ display_containers() {
 select_containers() {
     local -n containers=$1
     local -n selected=$2
-    
+
     print_info "Select containers to stop:"
-    echo "  - Enter numbers separated by spaces (e.g., 1 3 5)"
-    echo "  - Enter 'all' to select all containers"
-    echo "  - Enter '0' to cancel"
-    
+    echo "  • Enter numbers separated by spaces (e.g., 1 3 5)"
+    echo "  • Enter 'all' to select all containers"
+    echo "  • Enter '0' to cancel operation"
+    print_info "💡 Tip: You can select multiple containers: '1 2 4'"
+
     local input
     read -p "Selection: " input
-    
+
     if [[ "$input" == "0" ]]; then
+        print_info "Operation cancelled"
         return 1
     fi
-    
+
     if [[ "$input" == "all" ]]; then
         for container in "${containers[@]}"; do
             IFS='|' read -r id name _ _ <<< "$container"
             selected+=("$id|$name")
         done
-        print_success "Selected all ${#selected[@]} container(s)"
+        print_success "Selected all ${#selected[@]} container(s) for stopping"
         return 0
     fi
-    
+
     # Parse individual selections
+    local valid_selections=()
     for num in $input; do
         if [[ "$num" =~ ^[0-9]+$ ]] && [ "$num" -ge 1 ] && [ "$num" -le "${#containers[@]}" ]; then
             IFS='|' read -r id name _ _ <<< "${containers[$((num-1))]}"
             selected+=("$id|$name")
+            valid_selections+=("$num")
         else
-            print_warning "Invalid selection: $num"
+            print_warning "Invalid selection: $num (valid range: 1-${#containers[@]})"
         fi
     done
-    
+
     if [ ${#selected[@]} -eq 0 ]; then
         print_error "No valid containers selected"
         return 1
     fi
-    
-    print_success "Selected ${#selected[@]} container(s)"
+
+    print_success "Selected ${#selected[@]} container(s): ${valid_selections[*]}"
     return 0
 }
 
@@ -168,32 +213,44 @@ select_containers() {
 stop_container_gracefully() {
     local container_id="$1"
     local container_name="$2"
-    
-    print_info "Stopping container: $container_name ($container_id)"
-    
+
+    print_info "🛑 Stopping container: $container_name"
+
+    # Show container uptime before stopping
+    local uptime=$(docker inspect "$container_id" --format='{{.State.StartedAt}}' 2>/dev/null || echo "unknown")
+    if [[ "$uptime" != "unknown" ]]; then
+        local start_time=$(date -d "$uptime" +%s 2>/dev/null || echo "0")
+        local current_time=$(date +%s)
+        local uptime_seconds=$((current_time - start_time))
+        local uptime_display=$(printf '%dh:%dm:%ds\n' $((uptime_seconds/3600)) $((uptime_seconds%3600/60)) $((uptime_seconds%60)))
+        print_info "Container uptime: $uptime_display"
+    fi
+
     # Try graceful stop first
+    print_info "Attempting graceful stop (timeout: ${STOP_TIMEOUT}s)..."
     if timeout $STOP_TIMEOUT docker stop "$container_id" &>/dev/null; then
-        print_success "Container stopped gracefully: $container_name"
+        print_success "✅ Container stopped gracefully: $container_name"
         return 0
     fi
-    
+
     # If graceful stop fails, check if container is still running
     local status=$(docker inspect "$container_id" --format='{{.State.Status}}' 2>/dev/null || echo "unknown")
-    
+
     if [[ "$status" == "running" ]]; then
-        print_warning "Graceful stop timed out, forcing kill: $container_name"
+        print_warning "⚠️ Graceful stop timed out, forcing kill: $container_name"
+        print_info "This will immediately terminate the container"
         if docker kill "$container_id" &>/dev/null; then
-            print_success "Container killed: $container_name"
+            print_success "✅ Container killed: $container_name"
             return 0
         else
-            print_error "Failed to kill container: $container_name"
+            print_error "❌ Failed to kill container: $container_name"
             return 1
         fi
     elif [[ "$status" == "exited" ]]; then
-        print_success "Container stopped: $container_name"
+        print_success "✅ Container was already stopped: $container_name"
         return 0
     else
-        print_error "Container in unknown state: $status"
+        print_error "❓ Container in unknown state: $status"
         return 1
     fi
 }
@@ -233,22 +290,26 @@ process_containers() {
     local -n selected_containers=$1
     local remove_after_stop="$2"
     local remove_volumes="$3"
-    
+
     local stopped_count=0
     local removed_count=0
     local failed_count=0
-    
+
     print_separator
-    print_info "Processing ${#selected_containers[@]} container(s)..."
+    print_info "🔄 Processing ${#selected_containers[@]} container(s)..."
     print_separator
-    
-    for container in "${selected_containers[@]}"; do
-        IFS='|' read -r id name <<< "$container"
-        
+
+    local start_time=$(date +%s)
+
+    for i in "${!selected_containers[@]}"; do
+        IFS='|' read -r id name <<< "${selected_containers[$i]}"
+
+        echo "[$((i+1))/${#selected_containers[@]}] Processing: $name"
+
         # Stop container
         if stop_container_gracefully "$id" "$name"; then
             ((stopped_count++))
-            
+
             # Remove if requested
             if [[ "$remove_after_stop" == "true" ]]; then
                 if remove_container "$id" "$name" "$remove_volumes"; then
@@ -260,20 +321,27 @@ process_containers() {
         else
             ((failed_count++))
         fi
-        
+
         echo ""
     done
-    
+
+    local end_time=$(date +%s)
+    local duration=$((end_time - start_time))
+
     # Summary
     print_separator
-    print_header "Summary"
-    print_success "Containers stopped: $stopped_count"
+    print_header "📊 Operation Summary"
+    print_success "✅ Containers stopped: $stopped_count"
     if [[ "$remove_after_stop" == "true" ]]; then
-        print_success "Containers removed: $removed_count"
+        print_success "🗑️ Containers removed: $removed_count"
+        if [[ "$remove_volumes" == "true" ]]; then
+            print_info "💾 Associated volumes were also removed"
+        fi
     fi
     if [ $failed_count -gt 0 ]; then
-        print_error "Failed operations: $failed_count"
+        print_error "❌ Failed operations: $failed_count"
     fi
+    print_info "⏱️ Total time: ${duration}s"
     print_separator
 }
 
@@ -294,7 +362,13 @@ trap 'print_warning "Interrupted by user"; exit $EXIT_USER_CANCEL' INT TERM
 
 main() {
     print_header "Docker Container Stop/Remove"
-    print_info "Stop and remove containers safely"
+    print_info "Stop and remove containers safely with interactive selection"
+    print_info "This script helps you:"
+    print_info "  • View all running containers with details"
+    print_info "  • Select specific containers or stop all"
+    print_info "  • Choose to remove containers after stopping"
+    print_info "  • Optionally remove associated volumes"
+    print_info "  • Get confirmation for destructive actions"
     print_separator
     
     # Check Docker
@@ -353,8 +427,20 @@ main() {
     # Process containers
     process_containers selected "$remove_after_stop" "$remove_volumes"
     
-    print_success "Operation completed!"
-    
+    print_success "🎉 Operation completed successfully!"
+    print_separator
+    print_info "💡 Useful commands for next steps:"
+    echo "  • View all containers: docker ps -a"
+    echo "  • Clean up resources: docker system prune"
+    echo "  • Check volumes:       docker volume ls"
+    echo "  • System status:       docker system df"
+    echo "  • Start containers:    docker start <container>"
+    print_separator
+    print_info "🔄 Quick restart commands:"
+    echo "  • Restart all stopped: docker start \$(docker ps -aq -f status=exited)"
+    echo "  • Restart specific:    docker start <container_name>"
+    print_separator
+
     exit $EXIT_SUCCESS
 }
 

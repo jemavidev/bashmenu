@@ -522,6 +522,72 @@ load_modules() {
         return 1
     fi
     
+    # Load UI enhancement modules (optional, non-critical)
+    
+    # Load enhanced UI utilities
+    if [[ -f "$SCRIPT_DIR/ui_enhanced.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/ui_enhanced.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/ui_enhanced.sh" 2>/dev/null; then
+                print_success "Enhanced UI module loaded"
+                if declare -f log_info >/dev/null; then
+                    log_info "Enhanced UI utilities loaded successfully"
+                fi
+            else
+                print_warning "Enhanced UI module failed to load (runtime error)"
+            fi
+        else
+            print_warning "Enhanced UI module has syntax errors"
+        fi
+    fi
+    
+    # Load dialog wrapper
+    if [[ -f "$SCRIPT_DIR/dialog_wrapper.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/dialog_wrapper.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/dialog_wrapper.sh" 2>/dev/null; then
+                print_success "Dialog wrapper module loaded"
+                if declare -f log_info >/dev/null; then
+                    log_info "Dialog/Whiptail integration loaded successfully"
+                fi
+            else
+                print_warning "Dialog wrapper module failed to load (runtime error)"
+            fi
+        else
+            print_warning "Dialog wrapper module has syntax errors"
+        fi
+    fi
+    
+    # Load fzf integration
+    if [[ -f "$SCRIPT_DIR/fzf_integration.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/fzf_integration.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/fzf_integration.sh" 2>/dev/null; then
+                print_success "fzf integration module loaded"
+                if declare -f log_info >/dev/null; then
+                    log_info "fzf search integration loaded successfully"
+                fi
+            else
+                print_warning "fzf integration module failed to load (runtime error)"
+            fi
+        else
+            print_warning "fzf integration module has syntax errors"
+        fi
+    fi
+    
+    # Load notifications system
+    if [[ -f "$SCRIPT_DIR/notifications.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/notifications.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/notifications.sh" 2>/dev/null; then
+                print_success "Notifications module loaded"
+                if declare -f log_info >/dev/null; then
+                    log_info "Notification system loaded successfully"
+                fi
+            else
+                print_warning "Notifications module failed to load (runtime error)"
+            fi
+        else
+            print_warning "Notifications module has syntax errors"
+        fi
+    fi
+    
     if declare -f log_info >/dev/null; then
         log_info "All system modules loaded successfully"
     fi

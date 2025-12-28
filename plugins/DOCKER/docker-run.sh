@@ -6,6 +6,18 @@
 #
 # Usage: ./docker-run.sh
 #
+# This script provides an interactive way to run Docker containers with:
+# - Image selection from local images or pull new ones
+# - Port mapping configuration
+# - Volume mounting
+# - Environment variable setup
+# - Network configuration
+# - Resource limits (CPU/memory)
+# - Restart policy configuration
+#
+# Examples:
+#   ./docker-run.sh  # Interactive mode
+#
 
 set -euo pipefail
 
@@ -160,184 +172,284 @@ get_container_name() {
 
 configure_ports() {
     local -n ports=$1
-    
+
     if ! confirm "Configure port mappings?"; then
         return 0
     fi
-    
+
     print_info "Add port mappings (format: HOST:CONTAINER)"
-    print_info "Examples: 8080:80, 3000:3000"
+    print_info "Examples:"
+    echo "  • Web server: 8080:80 (host port 8080 → container port 80)"
+    echo "  • API: 3000:3000 (host port 3000 → container port 3000)"
+    echo "  • Database: 5432:5432 (PostgreSQL default)"
     print_info "Enter empty line to finish"
-    
+
     while true; do
         read -p "Port mapping: " mapping
-        
+
         if [[ -z "$mapping" ]]; then
             break
         fi
-        
+
         if [[ "$mapping" =~ ^([0-9]+):([0-9]+)$ ]]; then
             local host_port="${BASH_REMATCH[1]}"
             local container_port="${BASH_REMATCH[2]}"
-            
+
             if validate_port "$host_port" && validate_port "$container_port"; then
                 ports+=("-p $mapping")
                 print_success "Added: $mapping"
             fi
         else
             print_error "Invalid format. Use HOST:CONTAINER (e.g., 8080:80)"
+            print_info "Examples: 8080:80, 3000:3000, 5432:5432"
         fi
     done
 }
 
 configure_volumes() {
     local -n volumes=$1
-    
+
     if ! confirm "Configure volume mounts?"; then
         return 0
     fi
-    
-    print_info "Add volume mounts"
+
+    print_info "Add volume mounts for persistent data"
     print_info "Format: HOST_PATH:CONTAINER_PATH or VOLUME_NAME:CONTAINER_PATH"
+    print_info "Examples:"
+    echo "  • Host directory: /host/data:/app/data"
+    echo "  • Named volume: mydata:/app/data"
+    echo "  • Config files: ./config:/etc/app"
+    echo "  • Logs: ./logs:/var/log/app"
     print_info "Enter empty line to finish"
-    
+
     while true; do
         read -p "Volume mount: " mount
-        
+
         if [[ -z "$mount" ]]; then
             break
         fi
-        
+
         if [[ "$mount" =~ ^(.+):(.+)$ ]]; then
             volumes+=("-v $mount")
             print_success "Added: $mount"
         else
             print_error "Invalid format. Use SOURCE:DESTINATION"
+            print_info "Examples: /host/data:/app/data, myvolume:/app/data"
         fi
     done
 }
 
 configure_env_vars() {
     local -n env_vars=$1
-    
+
     if ! confirm "Configure environment variables?"; then
         return 0
     fi
-    
-    print_info "Add environment variables (format: KEY=VALUE)"
+
+    print_info "Add environment variables for container configuration"
+    print_info "Format: KEY=VALUE"
+    print_info "Examples:"
+    echo "  • NODE_ENV=production"
+    echo "  • DATABASE_URL=postgresql://localhost:5432/mydb"
+    echo "  • PORT=8080"
+    echo "  • DEBUG=true"
     print_info "Enter empty line to finish"
-    
+
     while true; do
         read -p "Environment variable: " env_var
-        
+
         if [[ -z "$env_var" ]]; then
             break
         fi
-        
+
         if [[ "$env_var" =~ ^[A-Za-z_][A-Za-z0-9_]*=.+$ ]]; then
             env_vars+=("-e $env_var")
             print_success "Added: $env_var"
         else
-            print_error "Invalid format. Use KEY=VALUE"
+            print_error "Invalid format. Use KEY=VALUE (e.g., NODE_ENV=production)"
+            print_info "Variable names can only contain letters, numbers, and underscores"
         fi
     done
 }
 
 configure_network() {
     local -n network=$1
-    
+
     if ! confirm "Configure custom network?"; then
         network="bridge"
         return 0
     fi
-    
+
+    print_info "Network types:"
+    echo "  • bridge: Isolated network with port mapping"
+    echo "  • host: Use host network directly (no isolation)"
+    echo "  • none: No networking"
+    echo "  • custom: User-defined networks for container communication"
+
     local networks=()
     while IFS= read -r net; do
         networks+=("$net")
     done < <(docker network ls --format "{{.Name}}" | grep -v "^bridge$\|^host$\|^none$")
-    
+
     if [ ${#networks[@]} -eq 0 ]; then
         print_warning "No custom networks found"
-        read -p "Enter network name (or press Enter for default bridge): " net_name
-        if [[ -n "$net_name" ]]; then
-            network="$net_name"
-        else
-            network="bridge"
-        fi
+        print_info "Available network types:"
+        echo "  1) bridge (default - isolated with port mapping)"
+        echo "  2) host (direct host networking - no isolation)"
+        echo "  3) none (no networking)"
+        echo "  4) Create new custom network"
+
+        local selection
+        read -p "Select network type: " selection
+
+        case $selection in
+            1|"") network="bridge" ;;
+            2) network="host" ;;
+            3) network="none" ;;
+            4)
+                read -p "Enter new network name: " new_net
+                if [[ -n "$new_net" ]]; then
+                    print_info "Creating network: $new_net"
+                    if docker network create "$new_net" &>/dev/null; then
+                        print_success "Network created: $new_net"
+                        network="$new_net"
+                    else
+                        print_error "Failed to create network, using bridge"
+                        network="bridge"
+                    fi
+                else
+                    print_warning "No name provided, using bridge"
+                    network="bridge"
+                fi
+                ;;
+            *)
+                print_warning "Invalid selection, using bridge"
+                network="bridge"
+                ;;
+        esac
         return 0
     fi
-    
+
     print_info "Select network:"
-    echo "  1) bridge (default)"
-    echo "  2) host"
-    echo "  3) none"
+    echo "  1) bridge (default - isolated with port mapping)"
+    echo "  2) host (direct host networking)"
+    echo "  3) none (no networking)"
     for i in "${!networks[@]}"; do
-        echo "  $((i+4))) ${networks[$i]}"
+        echo "  $((i+4))) ${networks[$i]} (custom network)"
     done
-    
+    echo "  0) Create new custom network"
+
     local selection
     read -p "Select network: " selection
-    
+
     case $selection in
-        1) network="bridge" ;;
+        1|"") network="bridge" ;;
         2) network="host" ;;
         3) network="none" ;;
+        0)
+            read -p "Enter new network name: " new_net
+            if [[ -n "$new_net" ]]; then
+                print_info "Creating network: $new_net"
+                if docker network create "$new_net" &>/dev/null; then
+                    print_success "Network created: $new_net"
+                    network="$new_net"
+                else
+                    print_error "Failed to create network, using bridge"
+                    network="bridge"
+                fi
+            else
+                print_warning "No name provided, using bridge"
+                network="bridge"
+            fi
+            ;;
         *)
             if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -ge 4 ] && [ "$selection" -lt $((${#networks[@]}+4)) ]; then
                 network="${networks[$((selection-4))]}"
+                print_info "Selected custom network: $network"
             else
                 print_warning "Invalid selection, using bridge"
                 network="bridge"
             fi
             ;;
     esac
-    
+
     print_success "Network: $network"
 }
 
 configure_restart_policy() {
     local -n policy=$1
-    
-    print_info "Select restart policy:"
-    echo "  1) no - Do not restart"
-    echo "  2) on-failure - Restart on failure"
-    echo "  3) always - Always restart"
-    echo "  4) unless-stopped - Always restart unless stopped manually"
-    
+
+    print_info "Select restart policy for container resilience:"
+    echo "  1) no - Do not restart (manual control only)"
+    echo "  2) on-failure - Restart only when container exits with error"
+    echo "  3) always - Always restart (aggressive, use carefully)"
+    echo "  4) unless-stopped - Always restart unless manually stopped"
+    print_info "💡 Recommended: 'unless-stopped' for production services"
+
     local selection
     read -p "Select policy (default: unless-stopped): " selection
-    
+
     case $selection in
-        1) policy="no" ;;
-        2) policy="on-failure" ;;
-        3) policy="always" ;;
-        4|"") policy="unless-stopped" ;;
-        *) 
+        1)
+            policy="no"
+            print_info "Container will not restart automatically"
+            ;;
+        2)
+            policy="on-failure"
+            print_info "Container will restart only on failures"
+            ;;
+        3)
+            policy="always"
+            print_warning "Container will always restart - ensure proper error handling"
+            ;;
+        4|"")
+            policy="unless-stopped"
+            print_info "Container will restart automatically unless manually stopped"
+            ;;
+        *)
             print_warning "Invalid selection, using unless-stopped"
             policy="unless-stopped"
             ;;
     esac
-    
+
     print_success "Restart policy: $policy"
 }
 
 configure_resources() {
     local -n resources=$1
-    
+
     if ! confirm "Configure resource limits?"; then
         return 0
     fi
-    
+
+    print_info "Configure CPU and memory limits to prevent resource exhaustion"
+    print_info "CPU limits:"
+    echo "  • 0.5 = half a CPU core"
+    echo "  • 1.0 = one CPU core"
+    echo "  • 2.0 = two CPU cores"
+    print_info "Memory limits:"
+    echo "  • 512m = 512 MB"
+    echo "  • 1g = 1 GB"
+    echo "  • 2g = 2 GB"
+
     read -p "CPU limit (e.g., 0.5, 1, 2) [optional]: " cpu_limit
     if [[ -n "$cpu_limit" ]]; then
-        resources+=("--cpus=$cpu_limit")
-        print_success "CPU limit: $cpu_limit"
+        if [[ "$cpu_limit" =~ ^[0-9]*\.?[0-9]+$ ]]; then
+            resources+=("--cpus=$cpu_limit")
+            print_success "CPU limit: $cpu_limit cores"
+        else
+            print_error "Invalid CPU limit format"
+        fi
     fi
-    
+
     read -p "Memory limit (e.g., 512m, 1g, 2g) [optional]: " mem_limit
     if [[ -n "$mem_limit" ]]; then
-        resources+=("--memory=$mem_limit")
-        print_success "Memory limit: $mem_limit"
+        if [[ "$mem_limit" =~ ^[0-9]+[mg]$ ]]; then
+            resources+=("--memory=$mem_limit")
+            print_success "Memory limit: $mem_limit"
+        else
+            print_error "Invalid memory format. Use format like 512m, 1g, 2g"
+        fi
     fi
 }
 
@@ -420,38 +532,57 @@ run_container() {
 
 verify_container() {
     local container_id="$1"
-    
+
     sleep 2
-    
+
     print_info "Verifying container status..."
-    
+
     local status=$(docker inspect "$container_id" --format='{{.State.Status}}' 2>/dev/null)
-    
+    local health=$(docker inspect "$container_id" --format='{{.State.Health.Status}}' 2>/dev/null || echo "none")
+
     if [[ "$status" == "running" ]]; then
         print_success "Container is running"
-        
+
         # Show container info
         local name=$(docker inspect "$container_id" --format='{{.Name}}' | sed 's/^\///')
         local ip=$(docker inspect "$container_id" --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
-        
+        local started=$(docker inspect "$container_id" --format='{{.State.StartedAt}}' 2>/dev/null)
+        local image=$(docker inspect "$container_id" --format='{{.Config.Image}}' 2>/dev/null)
+
         print_separator
         print_info "Container Information:"
         echo "  ID: $container_id"
         echo "  Name: $name"
+        echo "  Image: $image"
         echo "  IP: $ip"
         echo "  Status: $status"
-        
+        if [[ "$health" != "none" ]]; then
+            echo "  Health: $health"
+        fi
+        echo "  Started: $started"
+
         # Show port mappings
         local ports=$(docker port "$container_id" 2>/dev/null)
         if [[ -n "$ports" ]]; then
             print_info "Port Mappings:"
             echo "$ports" | sed 's/^/  /'
         fi
-        
+
+        # Show resource usage
+        print_info "Resource Usage:"
+        local stats=$(docker stats --no-stream --format "table {{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.BlockIO}}" "$container_id" 2>/dev/null | tail -n 1)
+        if [[ -n "$stats" ]]; then
+            echo "  $stats"
+        fi
+
         return 0
     else
         print_error "Container is not running (status: $status)"
+        if [[ "$health" != "none" ]]; then
+            print_info "Health status: $health"
+        fi
         print_info "Check logs: docker logs $container_id"
+        print_info "Check details: docker inspect $container_id"
         return 1
     fi
 }
@@ -474,6 +605,13 @@ trap 'print_warning "Interrupted by user"; exit $EXIT_USER_CANCEL' INT TERM
 main() {
     print_header "Docker Container Runner"
     print_info "Run containers with interactive configuration"
+    print_info "This script helps you run Docker containers with:"
+    print_info "  • Interactive image selection"
+    print_info "  • Port mapping configuration"
+    print_info "  • Volume mounting"
+    print_info "  • Environment variables"
+    print_info "  • Network configuration"
+    print_info "  • Resource limits"
     print_separator
     
     # Check Docker
@@ -534,9 +672,29 @@ main() {
     
     print_separator
     print_success "Container deployment completed!"
-    print_info "View logs: docker logs $container_id"
-    print_info "Stop container: docker stop $container_id"
-    print_info "Access container: docker exec -it $container_id /bin/bash"
+    print_separator
+    print_header "🚀 Deployment Summary"
+    print_info "Container ID: $container_id"
+    print_info "Container Name: $(docker inspect "$container_id" --format='{{.Name}}' | sed 's/^\///')"
+    print_info "Image Used: $image"
+    print_separator
+    print_info "🔧 Management Commands:"
+    echo "  • View logs:        docker logs $container_id"
+    echo "  • Follow logs:      docker logs -f $container_id"
+    echo "  • Stop container:   docker stop $container_id"
+    echo "  • Restart container: docker restart $container_id"
+    echo "  • Access shell:     docker exec -it $container_id /bin/bash"
+    echo "  • Monitor status:   docker ps -f id=$container_id"
+    echo "  • View details:     docker inspect $container_id"
+    echo "  • Check stats:      docker stats $container_id"
+    print_separator
+    print_info "💡 Pro Tips:"
+    echo "  • Use 'docker ps' to see all running containers"
+    echo "  • Use 'docker stats' to monitor resource usage"
+    echo "  • Use 'docker logs --tail 100 -f' to follow recent logs"
+    if [[ "$restart_policy" != "no" ]]; then
+        echo "  • Container will restart automatically on failure"
+    fi
     
     exit $EXIT_SUCCESS
 }

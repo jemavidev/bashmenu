@@ -103,4 +103,46 @@ else
 fi
 
 echo ""
+echo "🔧 Análisis y Recomendaciones"
+echo "-------------------------------------------"
+
+RECOMMENDATIONS=()
+
+# Analizar cambios pendientes
+if [[ $changes -gt 0 ]]; then
+    RECOMMENDATIONS+=("⚠️  Hay $changes archivo(s) con cambios - considera hacer commit o stash")
+fi
+
+# Analizar contenedores
+if [[ $running -lt 5 ]]; then
+    RECOMMENDATIONS+=("❌ Solo $running contenedores activos - ejecuta '06_restart_app.sh' opción 2")
+fi
+
+# Analizar disco
+disk_pct=$(echo "$disk_usage" | cut -d'/' -f1 | sed 's/[^0-9.]//g')
+if (( $(echo "$disk_pct > 20" | bc -l 2>/dev/null || echo 0) )); then
+    RECOMMENDATIONS+=("⚠️  Uso de disco elevado ($disk_usage) - ejecuta 'docker system prune -af'")
+fi
+
+# Analizar servicios
+if ! sudo systemctl is-active --quiet nginx; then
+    RECOMMENDATIONS+=("❌ Nginx inactivo - ejecuta 'sudo systemctl restart nginx'")
+fi
+
+if ! sudo systemctl is-active --quiet paqueteria.service 2>/dev/null; then
+    RECOMMENDATIONS+=("ℹ️  paqueteria.service inactivo (normal si usas solo Docker)")
+fi
+
+# Mostrar recomendaciones
+if [[ ${#RECOMMENDATIONS[@]} -eq 0 ]]; then
+    success "✅ No se encontraron problemas - sistema óptimo"
+else
+    for rec in "${RECOMMENDATIONS[@]}"; do
+        echo "  $rec"
+    done
+    echo ""
+    info "💡 Ejecuta '05_health_check.sh' para auto-fix interactivo"
+fi
+
+echo ""
 success "Diagnóstico finalizado"

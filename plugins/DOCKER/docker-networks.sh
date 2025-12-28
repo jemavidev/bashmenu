@@ -1,4 +1,26 @@
 #!/bin/bash
+#
+# Docker Networks Script
+# Version: 1.0.0
+# Description: Manage Docker networks (create, remove, connect containers)
+#
+# Usage: ./docker-networks.sh
+#
+# This script provides comprehensive Docker network management:
+# - List all networks with details
+# - Create custom networks with different drivers
+# - Remove unused networks safely
+# - Connect/disconnect containers to networks
+# - Inspect network configurations
+#
+# Examples:
+#   ./docker-networks.sh  # Interactive menu mode
+#
+# Network types:
+#   - bridge: Default network for containers
+#   - overlay: For multi-host networking
+#   - macvlan: Direct layer 2 connectivity
+#
 set -euo pipefail
 
 readonly RED='\033[0;31m'; readonly GREEN='\033[0;32m'; readonly YELLOW='\033[1;33m'
@@ -27,63 +49,201 @@ confirm() {
 }
 
 list_networks() {
-    print_header "Docker Networks"
+    print_header "🌐 Docker Networks Overview"
     print_separator
+
+    # Show networks with better formatting
+    print_info "📋 All Networks:"
     docker network ls --format "table {{.Name}}\t{{.Driver}}\t{{.Scope}}\t{{.ID}}"
+
     print_separator
-    local count=$(docker network ls -q | wc -l)
-    print_info "Total networks: $count"
+
+    # Network statistics
+    local total_networks=$(docker network ls -q | wc -l)
+    local custom_networks=$(docker network ls --filter type=custom -q | wc -l)
+    local builtin_networks=$((total_networks - custom_networks))
+
+    print_info "📊 Network Statistics:"
+    echo "  🌍 Total networks: $total_networks"
+    echo "  🔧 Custom networks: $custom_networks"
+    echo "  📦 Built-in networks: $builtin_networks"
+
+    # Show network usage
+    echo ""
+    print_info "🔗 Network Usage (containers per network):"
+    for network in $(docker network ls --format "{{.Name}}"); do
+        local container_count=$(docker network inspect "$network" --format='{{len .Containers}}' 2>/dev/null || echo "0")
+        local driver=$(docker network ls --filter name="$network" --format "{{.Driver}}")
+        printf "  %-20s %-10s %3d containers\n" "$network" "$driver" "$container_count"
+    done
+
+    print_separator
+
+    # Show warnings for unused networks
+    local unused_networks=()
+    while IFS= read -r network; do
+        [[ "$network" != "bridge" && "$network" != "host" && "$network" != "none" ]] || continue
+        local container_count=$(docker network inspect "$network" --format='{{len .Containers}}' 2>/dev/null || echo "0")
+        if [ "$container_count" -eq 0 ]; then
+            unused_networks+=("$network")
+        fi
+    done < <(docker network ls --format "{{.Name}}")
+
+    if [ ${#unused_networks[@]} -gt 0 ]; then
+        print_warning "⚠️ Found ${#unused_networks[@]} unused custom networks:"
+        for net in "${unused_networks[@]}"; do
+            echo "  • $net"
+        done
+        print_info "💡 Consider removing unused networks to clean up"
+    fi
+
     print_separator
 }
 
 create_network() {
-    print_info "Create new network"
+    print_info "🌐 Create new Docker network"
+    print_info "Networks allow containers to communicate with each other"
     print_separator
-    
-    read -p "Network name: " net_name
-    if [[ -z "$net_name" ]]; then
-        print_error "Network name cannot be empty"
-        return 1
-    fi
-    
-    if docker network ls --format "{{.Name}}" | grep -q "^${net_name}$"; then
-        print_error "Network already exists: $net_name"
-        return 1
-    fi
-    
-    print_info "Select driver:"
-    echo "  1) bridge (default)"
-    echo "  2) overlay"
-    echo "  3) macvlan"
-    read -p "Selection: " driver_choice
-    
+
+    # Network name input with validation
+    local net_name=""
+    while [[ -z "$net_name" ]]; do
+        read -p "Network name: " net_name
+        if [[ -z "$net_name" ]]; then
+            print_error "❌ Network name cannot be empty"
+            continue
+        fi
+
+        # Validate network name format
+        if [[ ! "$net_name" =~ ^[a-zA-Z0-9][a-zA-Z0-9_-]*$ ]]; then
+            print_error "❌ Invalid network name. Use only letters, numbers, hyphens, underscores"
+            print_info "💡 Name must start with letter or number"
+            net_name=""
+            continue
+        fi
+
+        # Check if network already exists
+        if docker network ls --format "{{.Name}}" | grep -q "^${net_name}$"; then
+            print_error "❌ Network already exists: $net_name"
+            if ! confirm "Choose a different name?"; then
+                return 1
+            fi
+            net_name=""
+            continue
+        fi
+    done
+
+    print_success "✅ Network name: $net_name"
+
+    # Driver selection with explanations
+    print_info "Select network driver:"
+    echo "  1) 🌉 bridge (default) - Isolated network for single host"
+    echo "     📝 Best for: Most applications, development"
+    echo "  2) 🌍 overlay - Multi-host networking with Swarm"
+    echo "     📝 Best for: Distributed applications, production clusters"
+    echo "  3) 🔌 macvlan - Direct layer 2 connectivity"
+    echo "     📝 Best for: Legacy applications, direct hardware access"
+    read -p "Selection (1-3): " driver_choice
+
     local driver="bridge"
+    local driver_desc="bridge (single host)"
     case $driver_choice in
-        2) driver="overlay" ;;
-        3) driver="macvlan" ;;
+        2)
+            driver="overlay"
+            driver_desc="overlay (multi-host)"
+            ;;
+        3)
+            driver="macvlan"
+            driver_desc="macvlan (layer 2)"
+            ;;
+        1|"")
+            driver="bridge"
+            driver_desc="bridge (single host)"
+            ;;
+        *)
+            print_warning "⚠️ Invalid selection, using bridge driver"
+            ;;
     esac
-    
+
+    print_success "✅ Driver: $driver_desc"
+
     local create_cmd="docker network create --driver $driver"
-    
-    if confirm "Configure subnet and gateway?"; then
-        read -p "Subnet (e.g., 172.20.0.0/16): " subnet
+
+    # Advanced configuration
+    if confirm "⚙️ Configure advanced network settings?"; then
+        print_info "Configure IP address management (IPAM):"
+
+        read -p "Subnet (e.g., 172.20.0.0/16) [optional]: " subnet
         if [[ -n "$subnet" ]]; then
-            create_cmd+=" --subnet=$subnet"
+            # Basic subnet validation
+            if [[ "$subnet" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$ ]]; then
+                create_cmd+=" --subnet=$subnet"
+                print_success "✅ Subnet: $subnet"
+            else
+                print_error "❌ Invalid subnet format"
+            fi
         fi
-        
-        read -p "Gateway (e.g., 172.20.0.1): " gateway
+
+        read -p "Gateway (e.g., 172.20.0.1) [optional]: " gateway
         if [[ -n "$gateway" ]]; then
-            create_cmd+=" --gateway=$gateway"
+            if [[ "$gateway" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                create_cmd+=" --gateway=$gateway"
+                print_success "✅ Gateway: $gateway"
+            else
+                print_error "❌ Invalid gateway format"
+            fi
         fi
+
+        # Additional options based on driver
+        case $driver in
+            overlay)
+                if confirm "Enable encryption for overlay network?"; then
+                    create_cmd+=" --opt encrypted=true"
+                    print_success "✅ Encryption enabled"
+                fi
+                ;;
+            macvlan)
+                read -p "Parent interface (e.g., eth0) [optional]: " parent
+                if [[ -n "$parent" ]]; then
+                    create_cmd+=" --opt parent=$parent"
+                    print_success "✅ Parent interface: $parent"
+                fi
+                ;;
+        esac
     fi
-    
+
     create_cmd+=" $net_name"
-    
+
+    print_separator
+    print_info "🚀 Creating network..."
+    print_info "Command: $create_cmd"
+
     if eval "$create_cmd" &>/dev/null; then
-        print_success "Network created: $net_name"
+        print_success "✅ Network created successfully!"
+
+        # Show network details
+        print_separator
+        print_info "📋 Network Details:"
+        docker network inspect "$net_name" --format='  Name: {{.Name}}
+  ID: {{.Id}}
+  Driver: {{.Driver}}
+  Scope: {{.Scope}}'
+
+        local subnet_info=$(docker network inspect "$net_name" --format='{{range .IPAM.Config}}Subnet: {{.Subnet}}, Gateway: {{.Gateway}}{{end}}')
+        if [[ -n "$subnet_info" ]]; then
+            echo "  IPAM: $subnet_info"
+        fi
+
+        print_separator
+        print_info "💡 Next steps:"
+        echo "  • Connect containers: docker network connect $net_name <container>"
+        echo "  • Run with network: docker run --network $net_name <image>"
+        echo "  • Inspect network: docker network inspect $net_name"
+
         return 0
     else
-        print_error "Failed to create network"
+        print_error "❌ Failed to create network"
+        print_info "💡 Check Docker daemon status and try a different name"
         return 1
     fi
 }
@@ -249,50 +409,130 @@ disconnect_container() {
 
 inspect_network() {
     local networks=()
-    while IFS= read -r net; do
-        networks+=("$net")
-    done < <(docker network ls --format "{{.Name}}")
-    
+    while IFS='|' read -r name driver scope; do
+        networks+=("$name|$driver|$scope")
+    done < <(docker network ls --format "{{.Name}}|{{.Driver}}|{{.Scope}}")
+
     if [ ${#networks[@]} -eq 0 ]; then
-        print_warning "No networks found"
+        print_warning "⚠️ No networks found"
         return 1
     fi
-    
-    print_info "Select network to inspect:"
+
+    print_info "🔍 Select network to inspect:"
+    printf "  %-4s %-20s %-10s %-8s\n" "NUM" "NAME" "DRIVER" "SCOPE"
+    print_separator
+
     for i in "${!networks[@]}"; do
-        echo "  $((i+1))) ${networks[$i]}"
+        IFS='|' read -r name driver scope <<< "${networks[$i]}"
+        printf "  %-4s %-20s %-10s %-8s\n" "$((i+1))" "$name" "$driver" "$scope"
     done
-    
+    echo ""
+
     read -p "Selection: " selection
     if [[ ! "$selection" =~ ^[0-9]+$ ]] || [ "$selection" -lt 1 ] || [ "$selection" -gt "${#networks[@]}" ]; then
-        print_error "Invalid selection"
+        print_error "❌ Invalid selection"
         return 1
     fi
-    
-    local net_name="${networks[$((selection-1))]}"
-    
+
+    IFS='|' read -r net_name _ _ <<< "${networks[$((selection-1))]}"
+
     print_separator
-    print_header "Network: $net_name"
+    print_header "🔍 Network Inspection: $net_name"
     print_separator
-    
-    docker network inspect "$net_name" --format='
-  Name: {{.Name}}
-  ID: {{.Id}}
-  Driver: {{.Driver}}
-  Scope: {{.Scope}}
-  Subnet: {{range .IPAM.Config}}{{.Subnet}}{{end}}
-  Gateway: {{range .IPAM.Config}}{{.Gateway}}{{end}}'
-    
-    echo ""
-    print_info "Connected containers:"
-    local containers=$(docker network inspect "$net_name" --format='{{range .Containers}}{{.Name}}{{"\n"}}{{end}}')
-    if [[ -z "$containers" ]]; then
-        echo "  None"
-    else
-        echo "$containers" | sed 's/^/  - /'
+
+    # Basic network information
+    print_info "📋 Basic Information:"
+    local network_info=$(docker network inspect "$net_name" 2>/dev/null)
+    if [[ -z "$network_info" ]]; then
+        print_error "❌ Could not inspect network: $net_name"
+        return 1
     fi
-    
+
+    echo "  🏷️  Name: $(echo "$network_info" | jq -r '.[0].Name' 2>/dev/null || docker network inspect "$net_name" --format='{{.Name}}')"
+    echo "  🆔  ID: $(echo "$network_info" | jq -r '.[0].Id[:12]' 2>/dev/null || docker network inspect "$net_name" --format='{{.Id}}' | cut -c1-12)"
+    echo "  🔧 Driver: $(echo "$network_info" | jq -r '.[0].Driver' 2>/dev/null || docker network inspect "$net_name" --format='{{.Driver}}')"
+    echo "  🌍 Scope: $(echo "$network_info" | jq -r '.[0].Scope' 2>/dev/null || docker network inspect "$net_name" --format='{{.Scope}}')"
+
+    # IPAM Configuration
+    local subnet=$(docker network inspect "$net_name" --format='{{range .IPAM.Config}}{{.Subnet}}{{end}}')
+    local gateway=$(docker network inspect "$net_name" --format='{{range .IPAM.Config}}{{.Gateway}}{{end}}')
+
+    if [[ -n "$subnet" ]]; then
+        echo "  🌐 Subnet: $subnet"
+        if [[ -n "$gateway" ]]; then
+            echo "  🚪 Gateway: $gateway"
+        fi
+    fi
+
+    # Connected containers
+    echo ""
+    print_info "🐳 Connected Containers:"
+    local containers=$(docker network inspect "$net_name" --format='{{range .Containers}}{{.Name}} ({{.IPv4Address}}){{"\n"}}{{end}}' 2>/dev/null)
+    local container_count=$(docker network inspect "$net_name" --format='{{len .Containers}}' 2>/dev/null || echo "0")
+
+    if [[ "$container_count" -eq 0 ]]; then
+        echo "  📭 No containers connected"
+    else
+        echo "  📦 $container_count container(s) connected:"
+        if [[ -n "$containers" ]]; then
+            echo "$containers" | sed 's/^/    • /'
+        fi
+    fi
+
+    # Network-specific information
+    local driver=$(docker network inspect "$net_name" --format='{{.Driver}}')
+    case $driver in
+        overlay)
+            echo ""
+            print_info "🌐 Overlay Network Details:"
+            local attachable=$(docker network inspect "$net_name" --format='{{.Attachable}}' 2>/dev/null)
+            local ingress=$(docker network inspect "$net_name" --format='{{.Ingress}}' 2>/dev/null)
+            if [[ "$attachable" == "true" ]]; then
+                echo "  ✅ Attachable: Yes (can attach standalone containers)"
+            fi
+            if [[ "$ingress" == "true" ]]; then
+                echo "  🚪 Ingress: Yes (load balancing network)"
+            fi
+            ;;
+        macvlan)
+            echo ""
+            print_info "🔌 Macvlan Network Details:"
+            local parent=$(docker network inspect "$net_name" --format='{{.Options.parent}}' 2>/dev/null)
+            if [[ -n "$parent" ]]; then
+                echo "  🔗 Parent Interface: $parent"
+            fi
+            ;;
+    esac
+
+    # Labels and options
+    local labels=$(docker network inspect "$net_name" --format='{{range $k,$v := .Labels}}{{$k}}={{$v}} {{end}}' 2>/dev/null)
+    if [[ -n "$labels" ]]; then
+        echo ""
+        print_info "🏷️ Labels:"
+        echo "  $labels"
+    fi
+
     print_separator
+
+    # Usage recommendations
+    if [[ "$container_count" -eq 0 ]]; then
+        print_info "💡 This network has no connected containers"
+        echo "  • Connect containers: docker network connect $net_name <container>"
+        echo "  • Run with network: docker run --network $net_name <image>"
+    else
+        print_info "💡 Network is in use by $container_count container(s)"
+        echo "  • View container IPs: docker network inspect $net_name"
+        echo "  • Test connectivity: docker exec <container> ping <other_container>"
+    fi
+
+    print_separator
+
+    if confirm "📄 View complete JSON configuration?"; then
+        print_separator
+        print_info "Complete JSON output (press 'q' to exit):"
+        docker network inspect "$net_name" | less
+        print_separator
+    fi
 }
 
 show_menu() {

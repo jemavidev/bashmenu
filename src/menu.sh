@@ -63,8 +63,9 @@ initialize_menu() {
     menu_levels=()
     current_path=()  # Reset navigation path
 
-    # Initialize AUTO_SCRIPTS as empty array to prevent unbound variable errors
+    # Initialize arrays to prevent unbound variable errors
     AUTO_SCRIPTS=()
+    SCRIPT_ENTRIES=()
 
     if declare -f log_info >/dev/null; then
         log_info "Initializing menu system"
@@ -911,7 +912,8 @@ display_menu() {
 # Display footer
 display_footer() {
     echo ""
-    echo -e "Navigate: ${selected_color}↑↓${NC} • ${success_color}Enter${NC} select • ${BLUE}d${NC} dashboard • ${BLUE}s${NC} status • ${BLUE}r${NC} refresh • ${error_color}q${NC} quit"
+    echo -e "Navigate: ${selected_color}↑↓${NC} • ${success_color}Enter${NC} select • ${CYAN}/${NC} search • ${CYAN}?${NC} help"
+    echo -e "${BLUE}d${NC} dashboard • ${BLUE}s${NC} status • ${BLUE}r${NC} refresh • ${error_color}q${NC} quit"
 }
 
 # =============================================================================
@@ -966,6 +968,10 @@ read_input() {
                       return
                       ;;
                   d|D|s|S|r|R|q|Q)  # Footer command keys
+                      echo "$char"
+                      return
+                      ;;
+                  /|?)  # Search and help keys
                       echo "$char"
                       return
                       ;;
@@ -1093,6 +1099,25 @@ menu_loop_classic() {
                 fi
                 continue
                 ;;
+            "/")
+                # Search with fzf if available
+                if declare -f fzf_search_scripts >/dev/null && [[ "${ENABLE_FZF_SEARCH:-true}" == "true" ]]; then
+                    local search_result
+                    search_result=$(fzf_search_scripts)
+                    if [[ -n "$search_result" ]]; then
+                        selected_index="$search_result"
+                        execute_menu_item "$selected_index"
+                    fi
+                else
+                    show_info_banner "Search requires fzf (install with: sudo apt install fzf)" 3
+                fi
+                continue
+                ;;
+            "?")
+                # Show help
+                show_help_screen
+                continue
+                ;;
             "ENTER")
                 # Enter key pressed - execute selected item
                 execute_menu_item "$selected_index"
@@ -1182,6 +1207,28 @@ menu_loop_hierarchical() {
                  fi
                  continue
                  ;;
+            "/")
+                # Search with fzf if available
+                if declare -f fzf_search_scripts >/dev/null && [[ "${ENABLE_FZF_SEARCH:-true}" == "true" ]]; then
+                    local search_result
+                    search_result=$(fzf_search_scripts)
+                    if [[ -n "$search_result" ]]; then
+                        selected_index="$search_result"
+                        local command="${menu_commands[$selected_index]}"
+                        if [[ "$command" =~ ^(navigate|execute) ]]; then
+                            handle_navigation "$command"
+                        fi
+                    fi
+                else
+                    show_info_banner "Search requires fzf (install with: sudo apt install fzf)" 3
+                fi
+                continue
+                ;;
+            "?")
+                # Show help
+                show_help_screen
+                continue
+                ;;
              "r"|"R"|"refresh")
                  # Refresh menu
                  continue
@@ -1564,6 +1611,85 @@ exit_menu() {
 
 # =============================================================================
 # Search and Filter
+# =============================================================================
+
+# Show help screen
+show_help_screen() {
+    clear_screen
+    
+    # Display header
+    echo -e "${CYAN}╔════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC}                    ${BOLD}${NEON_CYAN}BASHMENU HELP${NC}                          ${CYAN}║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    # Navigation shortcuts
+    echo -e "${BOLD}${GREEN}Navigation:${NC}"
+    echo -e "  ${selected_color}↑/↓${NC}         Navigate up/down through menu items"
+    echo -e "  ${selected_color}Home/End${NC}    Jump to first/last item"
+    echo -e "  ${success_color}Enter${NC}       Select and execute current item"
+    echo ""
+    
+    # Command shortcuts
+    echo -e "${BOLD}${GREEN}Commands:${NC}"
+    echo -e "  ${CYAN}/${NC}           Search scripts (requires fzf)"
+    echo -e "  ${CYAN}?${NC}           Show this help screen"
+    echo -e "  ${BLUE}d${NC}           Open system dashboard"
+    echo -e "  ${BLUE}s${NC}           Show quick status"
+    echo -e "  ${BLUE}r${NC}           Refresh menu"
+    echo -e "  ${error_color}q${NC}           Quit Bashmenu"
+    echo ""
+    
+    # Features
+    echo -e "${BOLD}${GREEN}Features:${NC}"
+    echo -e "  • Hierarchical menu navigation"
+    echo -e "  • Auto-detected scripts from plugin directories"
+    echo -e "  • Manual script configuration support"
+    echo -e "  • Enhanced UI with animations and colors"
+    echo -e "  • Dialog/Whiptail graphical interface (if available)"
+    echo -e "  • Interactive search with fzf (if available)"
+    echo -e "  • Desktop notifications (if available)"
+    echo ""
+    
+    # Configuration
+    echo -e "${BOLD}${GREEN}Configuration:${NC}"
+    echo -e "  Config file: ${CYAN}config/config.conf${NC}"
+    echo -e "  UI Mode:     ${CYAN}${UI_MODE:-auto}${NC}"
+    echo -e "  Theme:       ${CYAN}${DEFAULT_THEME:-modern}${NC}"
+    echo ""
+    
+    # Optional dependencies
+    echo -e "${BOLD}${GREEN}Optional Dependencies:${NC}"
+    local deps_status=""
+    
+    if declare -f is_fzf_available >/dev/null && is_fzf_available; then
+        deps_status+="  ${success_color}✓${NC} fzf (fuzzy search)\n"
+    else
+        deps_status+="  ${error_color}✗${NC} fzf (fuzzy search) - install: sudo apt install fzf\n"
+    fi
+    
+    if declare -f is_dialog_available >/dev/null && is_dialog_available; then
+        deps_status+="  ${success_color}✓${NC} dialog/whiptail (graphical UI)\n"
+    else
+        deps_status+="  ${error_color}✗${NC} dialog/whiptail - install: sudo apt install dialog\n"
+    fi
+    
+    if declare -f is_notify_send_available >/dev/null && is_notify_send_available; then
+        deps_status+="  ${success_color}✓${NC} notify-send (desktop notifications)\n"
+    else
+        deps_status+="  ${error_color}✗${NC} notify-send - install: sudo apt install libnotify-bin\n"
+    fi
+    
+    echo -e "$deps_status"
+    echo ""
+    
+    echo -e "${CYAN}╔════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC}           ${success_color}Press any key to return to menu...${NC}                ${CYAN}║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════════════════════════╝${NC}"
+    
+    read -n1 -s
+}
+
 # =============================================================================
 # Export Functions
 # =============================================================================

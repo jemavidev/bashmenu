@@ -17,9 +17,25 @@ read -r -p "Selecciona una opción: " selection
 
 case "$selection" in
     1)
-        branch=$(prompt_optional_value "Branch o tag a desplegar" "main")
-        confirm_or_abort "¿Ejecutar deploy completo en producción?"
-        info "Iniciando deploy para $branch"
+        info "Commits recientes disponibles:"
+        echo "-------------------------------------------"
+        cd "$PROJECT_DIR"
+        git log --oneline --decorate -n 20 --color=always
+        echo "-------------------------------------------"
+        echo ""
+        
+        commit=$(prompt_optional_value "Commit hash o branch (vacío = último de main)" "")
+        
+        if [[ -z "$commit" ]]; then
+            branch="main"
+            confirm_or_abort "¿Desplegar último commit de main?"
+            info "Desplegando último commit de main"
+        else
+            confirm_or_abort "¿Desplegar commit/branch: $commit?"
+            branch="$commit"
+            info "Desplegando $commit"
+        fi
+        
         ensure_command git
         ensure_command docker
         run_deployment_script "deploy.sh" "$branch"

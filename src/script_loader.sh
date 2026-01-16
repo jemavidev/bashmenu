@@ -290,10 +290,7 @@ scan_plugin_directories() {
     # Limpiar array anterior
     AUTO_SCRIPTS=()
 
-    # Debug: write to file
-    echo "DEBUG: plugin_dir=$plugin_dir" >> /tmp/bashmenu_debug.log
-    echo "DEBUG: extensions=$extensions" >> /tmp/bashmenu_debug.log
-    echo "DEBUG: ALLOWED_SCRIPT_DIRS=${ALLOWED_SCRIPT_DIRS:-}" >> /tmp/bashmenu_debug.log
+
 
     # Convertir extensiones a patrón find
     local find_pattern=""
@@ -307,7 +304,7 @@ scan_plugin_directories() {
         find_pattern="$find_pattern -name \"*$ext\""
     done
 
-    echo "DEBUG: find_pattern=$find_pattern" >> /tmp/bashmenu_debug.log
+
 
     # Construir comando find con profundidad máxima
     local find_cmd="find \"$plugin_dir\" -type f -executable \( $find_pattern \) -print0"
@@ -316,7 +313,7 @@ scan_plugin_directories() {
         find_cmd="find \"$plugin_dir\" -maxdepth \"$scan_depth\" -type f -executable \( $find_pattern \) -print0"
     fi
 
-    echo "DEBUG: find_cmd=$find_cmd" >> /tmp/bashmenu_debug.log
+
 
     # Ejecutar find y procesar resultados
     local found_scripts=""
@@ -324,7 +321,7 @@ scan_plugin_directories() {
         found_scripts="$found_scripts $script_path"
         # Verificar que esté en directorios permitidos
         if ! check_allowed_directory "$script_path" "${ALLOWED_SCRIPT_DIRS:-}"; then
-            echo "DEBUG: Skipping script outside allowed directories: $script_path" >> /tmp/bashmenu_debug.log
+
             if declare -f log_debug >/dev/null; then
                 log_debug "Skipping script outside allowed directories: $script_path"
             fi
@@ -364,7 +361,7 @@ scan_plugin_directories() {
 
         script_count=$((script_count + 1))
 
-        echo "DEBUG: Added script: $script_key -> $script_path" >> /tmp/bashmenu_debug.log
+
 
         if declare -f log_debug >/dev/null; then
             log_debug "Auto-detected script: $script_key -> $script_path"
@@ -372,9 +369,7 @@ scan_plugin_directories() {
 
     done < <(eval "$find_cmd" 2>&1 | tee /tmp/bashmenu_find.log)
 
-    echo "DEBUG: found_scripts=$found_scripts" >> /tmp/bashmenu_debug.log
-    echo "DEBUG: script_count=$script_count" >> /tmp/bashmenu_debug.log
-    echo "DEBUG: AUTO_SCRIPTS count=${#AUTO_SCRIPTS[@]}" >> /tmp/bashmenu_debug.log
+
 
     if declare -f log_info >/dev/null; then
         log_info "Auto-scanned $script_count scripts from plugin directories"

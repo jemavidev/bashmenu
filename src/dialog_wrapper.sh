@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Strict mode for better error handling
+set -euo pipefail
+
 # =============================================================================
 # Dialog/Whiptail Wrapper for Bashmenu
 # =============================================================================

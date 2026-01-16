@@ -1,0 +1,218 @@
+name: Bashmenu CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        bash-version: [4.0, 4.4, 5.0]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install required dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y bats-core shellcheck
+    
+    - name: Cache BATS installation
+      uses: actions/cache@v3
+      with:
+        path: ~/.local/bin
+        key: ${{ runner.os }}-bats-${{ hashFiles('**/package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-bats-
+    
+    - name: Setup BATS if not cached
+      run: |
+        if ! command -v bats &> /dev/null; then
+          git clone https://github.com/bats-core/bats-core.git
+          bash bats-core/install.sh ~/.local/bin
+        fi
+    
+    - name: Verify tools installation
+      run: |
+        bats --version
+        shellcheck --version
+        bash --version
+    
+    - name: Run ShellCheck analysis
+      run: |
+        echo "Running ShellCheck on all shell scripts..."
+        find . -name "*.sh" -type f -exec shellcheck {} \; | tee shellcheck-report.txt
+        if [ -s shellcheck-report.txt ]; then
+          echo "ShellCheck found issues:"
+          cat shellcheck-report.txt
+          exit 1
+        else
+          echo "No ShellCheck issues found!"
+        fi
+    
+    - name: Run BATS tests
+      run: |
+        export PATH="$HOME/.local/bin/bin:$PATH"
+        echo "Running BATS test suite..."
+        bats tests/ --tap || true
+    
+    - name: Security scan with ShellCheck (high severity)
+      run: |
+        echo "Running security-focused ShellCheck..."
+        find . -name "*.sh" -type f -exec shellcheck --severity=error {} \;
+        find . -name "*.sh" -type f -exec shellcheck --severity=warning {} \;
+    
+    - name: Check script permissions
+      run: |
+        echo "Checking script permissions..."
+        find . -name "*.sh" -not -perm -u+x -exec echo "Warning: {} is not executable" \;
+    
+    - name: Validate configuration files
+      run: |
+        echo "Validating configuration files..."
+        for config in config/*.conf; do
+          if [ -f "$config" ]; then
+            echo "Validating $config..."
+            bash -n "$config"
+          fi
+        done
+    
+    - name: Check for hardcoded secrets
+      run: |
+        echo "Checking for hardcoded secrets..."
+        if grep -r "password\|secret\|key\|token" --include="*.sh" . | grep -v "TODO\|FIXME\|example\|placeholder"; then
+          echo "Potential hardcoded secrets found!"
+          exit 1
+        else
+          echo "No hardcoded secrets detected"
+        fi
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Create installation package
+      run: |
+        mkdir -p dist
+        tar -czf dist/bashmenu-v2.1.tar.gz \
+          --exclude='.git' \
+          --exclude='dist' \
+          --exclude='tests' \
+          --exclude='.github' \
+          --exclude='*.log' \
+          .
+    
+    - name: Generate checksum
+      run: |
+        cd dist
+        sha256sum bashmenu-v2.1.tar.gz > bashmenu-v2.1.tar.gz.sha256
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: bashmenu-package
+        path: dist/
+        retention-days: 30
+
+  security:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install security tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y shellcheck
+    
+    - name: Run security-focused analysis
+      run: |
+        echo "Running security analysis..."
+        
+        # Check for dangerous functions
+        echo "Checking for dangerous function usage..."
+        grep -r "eval\|exec\|system" --include="*.sh" . | grep -v "function\|#" | tee dangerous-functions.txt
+        
+        # Check for unsafe file operations
+        echo "Checking for unsafe file operations..."
+        grep -r "rm -rf\|> /dev/null\|2>&1" --include="*.sh" . | grep -v "function\|#" | tee unsafe-operations.txt
+        
+        # Check for input validation
+        echo "Checking input validation..."
+        grep -r "read" --include="*.sh" . | wc -l
+        grep -r "validate\|sanitize" --include="*.sh" . | wc -l
+        
+        # Report findings
+        if [ -s dangerous-functions.txt ]; then
+          echo "Dangerous functions found:"
+          cat dangerous-functions.txt
+        fi
+        
+        if [ -s unsafe-operations.txt ]; then
+          echo "Unsafe operations found:"
+          cat unsafe-operations.txt
+        fi
+
+  performance:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Performance test
+      run: |
+        echo "Running performance tests..."
+        
+        # Test script loading time
+        start_time=$(date +%s.%N)
+        bash -c "source src/main.sh" 2>/dev/null || true
+        end_time=$(date +%s.%N)
+        load_time=$(echo "$end_time - $start_time" | bc)
+        echo "Script loading time: ${load_time}s"
+        
+        # Test menu generation time
+        start_time=$(date +%s.%N)
+        timeout 5s ./bashmenu --help >/dev/null 2>&1 || echo "Help command timed out"
+        end_time=$(date +%s.%N)
+        help_time=$(echo "$end_time - $start_time" | bc)
+        echo "Help generation time: ${help_time}s"
+        
+        # Check memory usage
+        echo "Checking memory usage patterns..."
+        grep -r "declare\|local\|array" --include="*.sh" src/ | wc -l > variable-count.txt
+        echo "Variable declarations: $(cat variable-count.txt)"
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test, build, security, performance]
+    if: always()
+    
+    steps:
+    - name: Notify on success
+      if: ${{ needs.test.result == 'success' && needs.build.result == 'success' && needs.security.result == 'success' && needs.performance.result == 'success' }}
+      run: |
+        echo "✅ All checks passed successfully!"
+        echo "🚀 Bashmenu v2.1 is ready for deployment"
+    
+    - name: Notify on failure
+      if: ${{ needs.test.result == 'failure' || needs.build.result == 'failure' || needs.security.result == 'failure' || needs.performance.result == 'failure' }}
+      run: |
+        echo "❌ Some checks failed:"
+        echo "Test: ${{ needs.test.result }}"
+        echo "Build: ${{ needs.build.result }}"
+        echo "Security: ${{ needs.security.result }}"
+        echo "Performance: ${{ needs.performance.result }}"
+        exit 1

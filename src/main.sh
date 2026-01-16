@@ -717,7 +717,7 @@ show_system_info() {
 # =============================================================================
 
 main() {
-    echo "DEBUG: main() called" >> /tmp/test_main.log
+
     # Check requirements
     if ! check_requirements; then
         print_error "System requirements not met. Exiting."

@@ -55,7 +55,7 @@ declare -a current_path=()
 # initialize_menu() -> void
 # Initializes the menu system and loads scripts
 initialize_menu() {
-    echo "DEBUG: initialize_menu called" >> /tmp/test_init.log
+
     # Clear arrays
     menu_options=()
     menu_commands=()
@@ -117,7 +117,7 @@ initialize_menu() {
 
     # Auto-scan plugin directories if enabled
     if [[ "${ENABLE_AUTO_SCAN:-true}" == "true" ]]; then
-        echo "DEBUG: ENABLE_AUTO_SCAN is true, calling scan_plugin_directories" >> /tmp/bashmenu_menu_debug.log
+
         if declare -f scan_plugin_directories >/dev/null; then
             scan_plugin_directories
 
@@ -126,13 +126,14 @@ initialize_menu() {
                 build_hierarchical_menu
             fi
         else
-            echo "DEBUG: scan_plugin_directories function not found" >> /tmp/bashmenu_menu_debug.log
+
             if declare -f log_warn >/dev/null; then
                 log_warn "Auto-scan functions not available"
             fi
         fi
     else
-        echo "DEBUG: ENABLE_AUTO_SCAN is not true: ${ENABLE_AUTO_SCAN:-true}" >> /tmp/bashmenu_menu_debug.log
+        # Auto-scan is disabled
+        :
     fi
 
 
@@ -171,19 +172,19 @@ build_hierarchical_menu() {
             done
             if [[ "$already_added" == "false" ]]; then
                 directories_found+=("$dir_name")
-                echo "DEBUG: found directory: $dir_name" >> /tmp/build_debug.log
+
             fi
         fi
     done
 
-    echo "DEBUG: directories_found: ${directories_found[@]}" >> /tmp/build_debug.log
+
 
     # Crear jerarquía de directorios
     for dir_name in "${directories_found[@]}"; do
         add_directory_to_hierarchy "$dir_name"
     done
 
-    echo "DEBUG: menu_hierarchy keys after build: ${!menu_hierarchy[@]}" >> /tmp/build_debug.log
+
 
     if declare -f log_info >/dev/null; then
         log_info "Built hierarchical menu with ${#directories_found[@]} directories"
@@ -194,7 +195,7 @@ build_hierarchical_menu() {
 add_directory_to_hierarchy() {
     local dir_path="$1"
 
-    echo "DEBUG: add_directory_to_hierarchy called with: $dir_path" >> /tmp/add_debug.log
+
 
     if [[ "$dir_path" == "." ]]; then
         return  # Directorio raíz no necesita entrada
@@ -212,12 +213,12 @@ add_directory_to_hierarchy() {
                 menu_hierarchy["$current_path:type"]="directory"
                 menu_hierarchy["$current_path:name"]="$part"
                 menu_hierarchy["$current_path:description"]="Directory: $part"
-                echo "DEBUG: added to menu_hierarchy: $current_path:type = directory" >> /tmp/add_debug.log
+
             fi
         fi
     done
 
-    echo "DEBUG: menu_hierarchy keys after add: ${!menu_hierarchy[@]}" >> /tmp/add_debug.log
+
 }
 
 # Generar menú para un directorio específico
@@ -1052,7 +1053,7 @@ menu_loop() {
         fi
     fi
 
-    echo "DEBUG: use_hierarchical=$use_hierarchical, AUTO_SCRIPTS count=${#AUTO_SCRIPTS[@]}" >> /tmp/menu_loop_debug.log
+
 
     if [[ "$use_hierarchical" == "true" ]]; then
         menu_loop_hierarchical
@@ -1065,88 +1066,93 @@ menu_loop() {
 menu_loop_classic() {
     local selected_index=0
     local max_selection=${#menu_options[@]}
+    
+    # Source input handler module if available
+    if [[ -f "src/menu_input_handler.sh" ]]; then
+        source src/menu_input_handler.sh
+    fi
+    
+    # Source display module if available
+    if [[ -f "src/menu_display.sh" ]]; then
+        source src/menu_display.sh
+    fi
 
     while true; do
-        # Display menu
-        display_header
-        display_menu "$selected_index"
-        display_footer
+        # Display menu using new display function
+        if declare -f refresh_menu_display >/dev/null; then
+            refresh_menu_display "classic" "$selected_index"
+        else
+            # Fallback to original display
+            display_header
+            display_menu "$selected_index"
+            display_footer
+        fi
 
         # Get user input
         local choice
         choice=$(read_input)
 
-        # Handle special cases
-        case $choice in
-            "timeout")
-                # Silent timeout - no message, just refresh
-                continue
-                ;;
-            "q"|"Q"|"quit"|"exit")
-                exit_menu
-                ;;
-            "d"|"D")
-                # Dashboard
-                if declare -f cmd_dashboard >/dev/null; then
-                    cmd_dashboard
-                fi
-                continue
-                ;;
-            "s"|"S")
-                # Quick status
-                if declare -f cmd_quick_status >/dev/null; then
-                    cmd_quick_status
-                fi
-                continue
-                ;;
-            "/")
-                # Search with fzf if available
-                if declare -f fzf_search_scripts >/dev/null && [[ "${ENABLE_FZF_SEARCH:-true}" == "true" ]]; then
-                    local search_result
-                    search_result=$(fzf_search_scripts)
-                    if [[ -n "$search_result" ]]; then
-                        selected_index="$search_result"
-                        execute_menu_item "$selected_index"
-                    fi
-                else
-                    show_info_banner "Search requires fzf (install with: sudo apt install fzf)" 3
-                fi
-                continue
-                ;;
-            "?")
-                # Show help
-                show_help_screen
-                continue
-                ;;
-            "ENTER")
-                # Enter key pressed - execute selected item
-                execute_menu_item "$selected_index"
-                ;;
-            "r"|"R"|"refresh")
-                # Refresh menu
-                continue
-                ;;
-            "")
-                # No input, continue
-                continue
-                ;;
-        esac
-
-        # Handle Enter key pressed - execute selected item
-        if [[ "$choice" == "ENTER" ]]; then
-            execute_menu_item "$selected_index"
+        # Handle input using new handler if available
+        if declare -f handle_classic_input >/dev/null; then
+            handle_classic_input "$choice" "selected_index" "$max_selection" || break
         else
-            # Handle arrow keys and other navigation
-            local new_selection
-            new_selection=$(handle_keyboard_input "$choice" "$selected_index" "$max_selection")
-
-            if [[ $new_selection -ne $selected_index ]]; then
-                selected_index=$new_selection
-                # Navigation changed - continue to next iteration without waiting
-            else
-                # Ignore all other input silently
-                continue
-            fi
+            # Fallback to original handling
+            case $choice in
+                "timeout") continue ;;
+                "q"|"Q"|"quit"|"exit") exit_menu; break ;;
+                "d"|"D") 
+                    if declare -f cmd_dashboard >/dev/null; then cmd_dashboard; fi 
+                    ;;
+                "s"|"S") 
+                    if declare -f cmd_quick_status >/dev/null; then cmd_quick_status; fi 
+                    ;;
+                "/") 
+                    if declare -f fzf_search_scripts >/dev/null && [[ "${ENABLE_FZF_SEARCH:-true}" == "true" ]]; then
+                        local search_result
+                        search_result=$(fzf_search_scripts)
+                        if [[ -n "$search_result" ]]; then
+                            selected_index="$search_result"
+                            execute_menu_item "$selected_index"
+                        fi
+                    else
+                        show_info_banner "Search requires fzf (install with: sudo apt install fzf)" 3
+                    fi
+                    ;;
+                "up"|"UP") 
+                    ((selected_index--))
+                    if [[ $selected_index -lt 0 ]]; then selected_index=$((max_selection - 1)); fi
+                    ;;
+                "down"|"DOWN") 
+                    ((selected_index++))
+                    if [[ $selected_index -ge $max_selection ]]; then selected_index=0; fi
+                    ;;
+                "page_up"|"PAGE_UP") 
+                    selected_index=$((selected_index - 10))
+                    if [[ $selected_index -lt 0 ]]; then selected_index=0; fi
+                    ;;
+                "page_down"|"PAGE_DOWN") 
+                    selected_index=$((selected_index + 10))
+                    if [[ $selected_index -ge $max_selection ]]; then selected_index=$((max_selection - 1)); fi
+                    ;;
+                "home"|"HOME") selected_index=0 ;;
+                "end"|"END") selected_index=$((max_selection - 1)) ;;
+                *)
+                    if [[ "$choice" =~ ^[0-9]+$ ]]; then
+                        local num_choice=$((choice - 1))
+                        if [[ $num_choice -ge 0 && $num_choice -lt $max_selection ]]; then
+                            execute_menu_item "$num_choice"
+                        else
+                            if declare -f log_error >/dev/null; then
+                                log_error "Invalid selection: $choice"
+                            fi
+                        fi
+                    else
+                        if declare -f log_error >/dev/null; then
+                            log_error "Unknown command: $choice"
+                        fi
+                    fi
+                    ;;
+            esac
         fi
     done
 }
@@ -1343,11 +1349,16 @@ create_script_wrapper() {
     # Sanitizar nombre para crear función válida
     local func_name="exec_${name//[^a-zA-Z0-9_]/_}"
     
-    # Crear función dinámica usando eval
+    # Crear función dinámica usando eval con escape apropiado
     # La función llama a execute_script con los parámetros correctos
+    # Todas las entradas están escapadas apropiadamente para prevenir inyección
+    local escaped_path=$(printf '%s\n' "$path" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    local escaped_name=$(printf '%s\n' "$name" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    local escaped_params=$(printf '%s\n' "$default_params" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    
     eval "${func_name}() {
         if declare -f execute_script >/dev/null; then
-            execute_script '$path' '$name' '$default_params'
+            execute_script '${escaped_path}' '${escaped_name}' '${escaped_params}'
         else
             print_error 'Script executor not available'
             if declare -f log_error >/dev/null; then
@@ -1378,8 +1389,22 @@ create_script_wrapper() {
 sanitize_script_path() {
     local path="$1"
     
-    # Remove any ../ or ./ sequences
-    path="${path//.\.\//}"
+    # Input validation
+    if [[ -z "$path" ]]; then
+        echo ""
+        return 1
+    fi
+    
+    # Reject dangerous patterns first
+    if [[ "$path" =~ \.\./ ]] || [[ "$path" =~ \./ ]]; then
+        echo ""
+        return 1
+    fi
+    
+    # Remove any remaining dangerous sequences (defense in depth)
+    path="${path//\.\.\//}"
+    path="${path//.\//}"
+    path="${path//..\/}"
     path="${path//.\//}"
     
     # Remove multiple consecutive slashes
@@ -1387,6 +1412,12 @@ sanitize_script_path() {
     
     # Remove trailing slash
     path="${path%/}"
+    
+    # Validate final path doesn't contain dangerous patterns
+    if [[ "$path" =~ \.\./ ]] || [[ "$path" =~ \./ ]]; then
+        echo ""
+        return 1
+    fi
     
     echo "$path"
 }

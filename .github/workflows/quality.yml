@@ -1,0 +1,185 @@
+name: Code Quality and Style Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install code quality tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y shellcheck bc
+    
+    - name: Run ShellCheck with all checks
+      run: |
+        echo "Running comprehensive ShellCheck analysis..."
+        
+        # Create report directory
+        mkdir -p reports
+        
+        # Run ShellCheck on all scripts
+        find . -name "*.sh" -type f | while read script; do
+          echo "Analyzing $script..."
+          shellcheck "$script" > "reports/$(basename "$script").shellcheck" 2>&1 || true
+        done
+        
+        # Generate summary report
+        echo "# ShellCheck Summary Report" > reports/SUMMARY.md
+        echo "" >> reports/SUMMARY.md
+        echo "Generated on: $(date)" >> reports/SUMMARY.md
+        echo "" >> reports/SUMMARY.md
+        
+        # Count issues by severity
+        error_count=0
+        warning_count=0
+        info_count=0
+        
+        for report in reports/*.shellcheck; do
+          if [ -f "$report" ]; then
+            errors=$(grep -c "^SC[0-9]" "$report" 2>/dev/null || echo 0)
+            warnings=$(grep -c "warning" "$report" 2>/dev/null || echo 0)
+            infos=$(grep -c "info" "$report" 2>/dev/null || echo 0)
+            
+            error_count=$((error_count + errors))
+            warning_count=$((warning_count + warnings))
+            info_count=$((info_count + infos))
+            
+            echo "## $(basename "$report" .shellcheck)" >> reports/SUMMARY.md
+            echo "- Errors: $errors" >> reports/SUMMARY.md
+            echo "- Warnings: $warnings" >> reports/SUMMARY.md
+            echo "- Info: $infos" >> reports/SUMMARY.md
+            echo "" >> reports/SUMMARY.md
+          fi
+        done
+        
+        echo "## Total Summary" >> reports/SUMMARY.md
+        echo "- Total Errors: $error_count" >> reports/SUMMARY.md
+        echo "- Total Warnings: $warning_count" >> reports/SUMMARY.md
+        echo "- Total Info: $info_count" >> reports/SUMMARY.md
+        
+        # Display summary
+        cat reports/SUMMARY.md
+        
+        # Fail if there are errors
+        if [ $error_count -gt 0 ]; then
+          echo "❌ ShellCheck found $error_count error(s)!"
+          exit 1
+        else
+          echo "✅ No ShellCheck errors found!"
+        fi
+    
+    - name: Check code style consistency
+      run: |
+        echo "Checking code style consistency..."
+        
+        # Check for consistent function declarations
+        function_count=$(grep -r "^function " --include="*.sh" . | wc -l)
+        old_style_count=$(grep -r "^[a-zA-Z_][a-zA-Z0-9_]*() {" --include="*.sh" . | wc -l)
+        
+        echo "Function declarations with 'function' keyword: $function_count"
+        echo "Function declarations without 'function' keyword: $old_style_count"
+        
+        # Check for consistent variable naming
+        local_count=$(grep -r "local " --include="*.sh" . | wc -l)
+        readonly_count=$(grep -r "readonly " --include="*.sh" . | wc -l)
+        
+        echo "Local variables: $local_count"
+        echo "Readonly variables: $readonly_count"
+        
+        # Check for consistent indentation
+        mixed_indentation=$(grep -r $'\t.* ' --include="*.sh" . | wc -l)
+        echo "Lines with mixed indentation: $mixed_indentation"
+        
+        if [ $mixed_indentation -gt 0 ]; then
+          echo "⚠️  Found mixed indentation (tabs and spaces)"
+        fi
+    
+    - name: Analyze code complexity
+      run: |
+        echo "Analyzing code complexity..."
+        
+        # Count total lines of code
+        total_lines=$(find . -name "*.sh" -type f -exec wc -l {} + | tail -1 | awk '{print $1}')
+        echo "Total lines of shell code: $total_lines"
+        
+        # Find largest functions
+        echo "Finding largest functions..."
+        find . -name "*.sh" -type f -exec awk '
+          /^function / { 
+            func=$2; 
+            start=NR; 
+          } 
+          /^}$/ && start>0 { 
+            print func " " (NR-start+1) " lines"; 
+            start=0; 
+          }' {} \; | sort -k2 -nr | head -10
+        
+        # Count functions per file
+        echo "Functions per file:"
+        find . -name "*.sh" -type f -exec sh -c '
+          echo "$1: $(grep -c "^function \|^[a-zA-Z_][a-zA-Z0-9_]*() {" "$1")"
+        ' sh {} \;
+    
+    - name: Check for TODO/FIXME comments
+      run: |
+        echo "Checking for TODO/FIXME comments..."
+        
+        todo_count=$(grep -r "TODO\|FIXME\|XXX\|HACK" --include="*.sh" . | wc -l)
+        echo "Total TODO/FIXME comments: $todo_count"
+        
+        if [ $todo_count -gt 0 ]; then
+          echo "TODO/FIXME items found:"
+          grep -r "TODO\|FIXME\|XXX\|HACK" --include="*.sh" . || true
+        fi
+    
+    - name: Generate quality report
+      run: |
+        echo "Generating code quality report..."
+        
+        cat > reports/QUALITY_REPORT.md << EOF
+# Bashmenu Code Quality Report
+
+Generated: $(date)
+Commit: ${{ github.sha }}
+
+## Metrics
+- Total shell scripts: $(find . -name "*.sh" -type f | wc -l)
+- Total lines of code: $(find . -name "*.sh" -type f -exec wc -l {} + | tail -1 | awk '{print $1}')
+- TODO/FIXME items: $(grep -r "TODO\|FIXME\|XXX\|HACK" --include="*.sh" . | wc -l)
+
+## ShellCheck Results
+- Errors: $(find reports -name "*.shellcheck" -exec grep -c "^SC[0-9]" {} \; 2>/dev/null | awk '{sum+=$1} END {print sum+0}')
+- Warnings: $(find reports -name "*.shellcheck" -exec grep -c "warning" {} \; 2>/dev/null | awk '{sum+=$1} END {print sum+0}')
+
+## Quality Score
+EOF
+        
+        # Calculate quality score (simplified)
+        total_issues=$(find reports -name "*.shellcheck" -exec wc -l {} \; 2>/dev/null | awk '{sum+=$1} END {print sum+0}')
+        if [ $total_issues -eq 0 ]; then
+          echo "- Quality Score: 100%" >> reports/QUALITY_REPORT.md
+        elif [ $total_issues -lt 10 ]; then
+          echo "- Quality Score: 90%" >> reports/QUALITY_REPORT.md
+        elif [ $total_issues -lt 50 ]; then
+          echo "- Quality Score: 75%" >> reports/QUALITY_REPORT.md
+        else
+          echo "- Quality Score: 60%" >> reports/QUALITY_REPORT.md
+        fi
+        
+        cat reports/QUALITY_REPORT.md
+    
+    - name: Upload quality reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: quality-reports
+        path: reports/
+        retention-days: 30

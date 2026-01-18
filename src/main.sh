@@ -522,21 +522,53 @@ load_modules() {
         return 1
     fi
     
-    # Load UI enhancement modules (optional, non-critical)
+    # Load enhanced UI modules (optional, non-critical)
     
-    # Load enhanced UI utilities
+    # Load professional themes system
+    if [[ -f "$SCRIPT_DIR/professional_themes.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/professional_themes.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/professional_themes.sh" 2>/dev/null; then
+                print_success "Professional themes module loaded"
+                if declare -f log_info >/dev/null; then
+                    log_info "Professional themes loaded successfully"
+                fi
+            else
+                print_warning "Professional themes module failed to load (runtime error)"
+            fi
+        else
+            print_warning "Professional themes module has syntax errors"
+        fi
+    fi
+    
+    # Load enhanced menu display system
+    if [[ -f "$SCRIPT_DIR/enhanced_menu_display.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/enhanced_menu_display.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/enhanced_menu_display.sh" 2>/dev/null; then
+                print_success "Enhanced menu display module loaded"
+                if declare -f log_info >/dev/null; then
+                    log_info "Enhanced menu display loaded successfully"
+                fi
+            else
+                print_warning "Enhanced menu display module failed to load (runtime error)"
+            fi
+        else
+            print_warning "Enhanced menu display module has syntax errors"
+        fi
+    fi
+    
+    # Load legacy enhanced UI utilities
     if [[ -f "$SCRIPT_DIR/ui_enhanced.sh" ]]; then
         if bash -n "$SCRIPT_DIR/ui_enhanced.sh" 2>/dev/null; then
             if source "$SCRIPT_DIR/ui_enhanced.sh" 2>/dev/null; then
-                print_success "Enhanced UI module loaded"
+                print_success "Legacy enhanced UI module loaded"
                 if declare -f log_info >/dev/null; then
-                    log_info "Enhanced UI utilities loaded successfully"
+                    log_info "Legacy enhanced UI utilities loaded successfully"
                 fi
             else
-                print_warning "Enhanced UI module failed to load (runtime error)"
+                print_warning "Legacy enhanced UI module failed to load (runtime error)"
             fi
         else
-            print_warning "Enhanced UI module has syntax errors"
+            print_warning "Legacy enhanced UI module has syntax errors"
         fi
     fi
     
@@ -601,7 +633,7 @@ set_default_config() {
     ENABLE_COLORS=true
     AUTO_REFRESH=false
     SHOW_TIMESTAMP=true
-    DEFAULT_THEME="default"
+    DEFAULT_THEME="modern_corporate"
     LOG_LEVEL=1
     LOG_FILE="/tmp/bashmenu.log"
     ENABLE_HISTORY=true
@@ -614,6 +646,13 @@ set_default_config() {
     AUTO_BACKUP=true
     BACKUP_RETENTION_DAYS=7
     BACKUP_DIR="$HOME/.bashmenu/backups"
+    
+    # Enhanced UI configuration
+    ENABLE_ENHANCED_UI=true
+    MENU_PAGE_SIZE=10
+    ENABLE_ANIMATIONS=true
+    ENABLE_SEARCH=true
+    PROFESSIONAL_THEME_ENABLED=true
 }
 
 # =============================================================================

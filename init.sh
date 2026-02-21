@@ -4,7 +4,7 @@
 # Bashmenu + BetterAgentX - Complete Initialization Script
 # =============================================================================
 # Description: Initializes Bashmenu with full BetterAgentX integration
-# Version:     3.0
+# Version:     2.2
 # Author:      JESUS MARIA VILLALOBOS
 # =============================================================================
 

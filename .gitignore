@@ -53,8 +53,17 @@ Thumbs.db
 local/
 dev/
 sandbox/
-test/
-tests/
+
+# Cache y datos temporales de usuario
+~/.bashmenu/cache/
+~/.bashmenu/logs/
+~/.bashmenu/favorites.json
+
+# Distribución
+dist/*.tar.gz
+dist/*.deb
+dist/*.rpm
+dist/checksums.txt
 
 # Gestores de paquetes
 node_modules/
@@ -84,8 +93,16 @@ coverage/
 .env
 .env.local
 .env.*.local
+.bashmenu.env
+!.bashmenu.env.example
 
 # Notas personales
 TODO.md
 NOTES.md
 notes/
+
+# BetterAgentX
+.kiro/memory/*.json
+!.kiro/memory/README.md
+.kiro/cache/
+.kiro/backups/

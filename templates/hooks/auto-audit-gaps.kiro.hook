@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Auto-Audit Memory Gaps",
+  "description": "Automatically runs memory audit after agent stops and suggests missing documentation if gaps detected (>20% imbalance). Helps maintain consistent documentation across tasks, decisions, and patterns.",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run memory audit to check documentation health:\n\n1. Execute: bash scripts/audit-memory.sh\n2. Review the audit output\n3. Check if gap > 20% (decision gap > 2 OR pattern gap > 2)\n\nIF GAPS DETECTED (>20%):\n- Show specific suggestions from audit\n- Ask: \"Should I document the missing items now?\"\n- Format: \"📋 Audit found gaps: [summary]. Suggestions: [list]\"\n\nIF NO SIGNIFICANT GAPS:\n- Respond: \"✅ Memory audit: Documentation balanced (ratio: X:Y:Z)\"\n\nIMPORTANT:\n- Only suggest documentation if gaps are significant (>20%)\n- Show specific suggestions from audit output\n- Be concise - max 5 lines\n- Don't document automatically, ask first"
+  },
+  "workspaceFolderName": "BetterAgents",
+  "shortName": "auto-audit-gaps"
+}

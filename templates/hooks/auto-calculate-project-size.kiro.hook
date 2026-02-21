@@ -1,0 +1,12 @@
+{
+  "name": "Auto-Calculate Project Size",
+  "version": "1.0.0",
+  "description": "Automatically calculate project token size after agent execution",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "bash scripts/calculate-project-size.sh"
+  }
+}

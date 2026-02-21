@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-02-17T02:00:00-05:00",
+  "decisions": [
+    {
+      "id": "DEC-001",
+      "date": "2026-02-17T02:00:00-05:00",
+      "title": "Token tracking system design for memory management",
+      "context": "Need to track memory usage to know when cleanup is needed and understand which agents/skills generate most content",
+      "decision": "Implement 3-tier token tracking: entry-level (per item), file-level (per category), and global stats (memory-stats.json). Track agent attribution and skill usage. Use 4-char-per-token estimation. Focus on cleanup decisions, skip conversation tracking.",
+      "consequences": {
+        "positive": ["Know when to cleanup old memory", "Track agent/skill verbosity", "Simple estimation without API calls", "Dashboard visibility of memory usage"],
+        "negative": ["Estimation not 100% accurate", "Additional ~50-100 tokens overhead per update"],
+        "risks": ["Estimation drift over time"]
+      },
+      "alternatives": ["Exact token counting via API (rejected: too expensive)", "No tracking (rejected: can't manage growth)", "Conversation tracking (rejected: too complex)"],
+      "agent": "AgentX/Coder",
+      "tags": ["memory", "token-tracking", "cleanup", "agent-attribution", "design"]
+    }
+  ],
+  "summary": {
+    "totalDecisions": 0,
+    "byStatus": {
+      "proposed": 0,
+      "approved": 0,
+      "implemented": 0,
+      "rejected": 0,
+      "superseded": 0
+    },
+    "byAgent": {}
+  },
+  "_comments": {
+    "dateFormat": "Use ISO 8601 format with timezone for timestamps: YYYY-MM-DDTHH:MM:SS-05:00",
+    "example": "2026-02-16T14:30:00-05:00",
+    "note": "Dashboard will display date and time when timestamp includes 'T', otherwise only date"
+  }
+}

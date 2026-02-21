@@ -1,0 +1,1579 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-02-17",
+  "totalSkills": 56,
+  "skills": {
+    "accessibility-compliance": {
+      "displayName": "Accessibility Compliance",
+      "description": "Auto-generated entry for accessibility-compliance",
+      "size": 7280,
+      "priority": "high",
+      "keywords": [
+        "accessibility",
+        "accesible",
+        "accesibilidad",
+        "wcag",
+        "a11y",
+        "screen reader",
+        "lector pantalla",
+        "aria",
+        "semantic",
+        "semantico",
+        "contrast",
+        "contraste",
+        "keyboard",
+        "teclado",
+        "navigation",
+        "navegacion",
+        "inclusive",
+        "inclusivo",
+        "disability",
+        "discapacidad",
+        "form",
+        "formulario",
+        "input",
+        "button"
+      ],
+      "agents": [
+        "ux-designer"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "design",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "api-design-principles": {
+      "displayName": "Api Design Principles",
+      "description": "Auto-generated entry for api-design-principles",
+      "size": 5634,
+      "priority": "medium",
+      "keywords": [
+        "api",
+        "rest",
+        "graphql",
+        "design",
+        "endpoint",
+        "resource",
+        "http",
+        "restful",
+        "diseño"
+      ],
+      "agents": [
+        "architect",
+        "coder"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "architecture",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "architecture-decision-records": {
+      "displayName": "Architecture Decision Records",
+      "description": "Auto-generated entry for architecture-decision-records",
+      "size": 2329,
+      "priority": "medium",
+      "keywords": [
+        "adr",
+        "decision",
+        "architecture",
+        "record",
+        "documentation",
+        "arquitectura",
+        "decision"
+      ],
+      "agents": [
+        "architect"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "architecture",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "architecture-patterns": {
+      "displayName": "Architecture Patterns",
+      "description": "Auto-generated entry for architecture-patterns",
+      "size": 1946,
+      "priority": "medium",
+      "keywords": [
+        "architecture",
+        "pattern",
+        "clean",
+        "hexagonal",
+        "ddd",
+        "domain",
+        "microservices",
+        "arquitectura",
+        "patron"
+      ],
+      "agents": [
+        "architect"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "architecture",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "async-python-patterns": {
+      "displayName": "Async Python Patterns",
+      "description": "Auto-generated entry for async-python-patterns",
+      "size": 3004,
+      "priority": "medium",
+      "keywords": [
+        "async",
+        "asyncio",
+        "await",
+        "python",
+        "concurrent",
+        "coroutine",
+        "asynchronous",
+        "asincrono",
+        "concurrente",
+        "paralelo",
+        "parallel",
+        "event loop",
+        "non-blocking"
+      ],
+      "agents": [
+        "coder"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "development",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "audit-website": {
+      "displayName": "Audit Website",
+      "description": "Auto-generated entry for audit-website",
+      "size": 4768,
+      "priority": "medium",
+      "keywords": [
+        "audit",
+        "website",
+        "seo",
+        "performance",
+        "security",
+        "analysis",
+        "auditoria",
+        "sitio web",
+        "analisis"
+      ],
+      "agents": [
+        ""
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "auth-implementation-patterns": {
+      "displayName": "Auth Implementation Patterns",
+      "description": "Auto-generated entry for auth-implementation-patterns",
+      "size": 2522,
+      "priority": "high",
+      "keywords": [
+        "auth",
+        "authentication",
+        "authorization",
+        "jwt",
+        "oauth",
+        "session",
+        "autenticacion",
+        "autorizacion",
+        "api",
+        "rest",
+        "token",
+        "login",
+        "password",
+        "security",
+        "secure"
+      ],
+      "agents": [
+        "security",
+        "coder",
+        "architect"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "security",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "brainstorming": {
+      "displayName": "Brainstorming",
+      "description": "Auto-generated entry for brainstorming",
+      "size": 884,
+      "priority": "medium",
+      "keywords": [
+        "brainstorm",
+        "ideation",
+        "creative",
+        "idea",
+        "planning",
+        "lluvia ideas",
+        "planificar"
+      ],
+      "agents": [
+        "product-manager"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "canvas-design": {
+      "displayName": "Canvas Design",
+      "description": "Auto-generated entry for canvas-design",
+      "size": 2332,
+      "priority": "medium",
+      "keywords": [
+        "canvas",
+        "design",
+        "visual",
+        "art",
+        "graphic",
+        "poster",
+        "diseño",
+        "grafico",
+        "arte",
+        "visual"
+      ],
+      "agents": [
+        "ux-designer"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "design",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "changelog-automation": {
+      "displayName": "Changelog Automation",
+      "description": "Auto-generated entry for changelog-automation",
+      "size": 2293,
+      "priority": "medium",
+      "keywords": [
+        "changelog",
+        "release notes",
+        "version",
+        "history",
+        "automation",
+        "historial",
+        "version"
+      ],
+      "agents": [
+        "devops"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "operations",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "code-reviewer": {
+      "displayName": "Code Reviewer",
+      "description": "Auto-generated entry for code-reviewer",
+      "size": 617,
+      "priority": "medium",
+      "keywords": [
+        "code review",
+        "review",
+        "feedback",
+        "quality",
+        "revision codigo",
+        "revisar"
+      ],
+      "agents": [
+        "security"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "security",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "competitor-alternatives": {
+      "displayName": "Competitor Alternatives",
+      "description": "Auto-generated entry for competitor-alternatives",
+      "size": 3862,
+      "priority": "medium",
+      "keywords": [
+        "competitor",
+        "alternative",
+        "comparison",
+        "vs",
+        "competidor",
+        "alternativa",
+        "comparacion"
+      ],
+      "agents": [
+        "researcher"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "copy-editing": {
+      "displayName": "Copy Editing",
+      "description": "Auto-generated entry for copy-editing",
+      "size": 5134,
+      "priority": "medium",
+      "keywords": [
+        "copy",
+        "editing",
+        "content",
+        "writing",
+        "texto",
+        "edicion",
+        "contenido",
+        "redaccion"
+      ],
+      "agents": [
+        "writer"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "documentation",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "database-migration": {
+      "displayName": "Database Migration",
+      "description": "Auto-generated entry for database-migration",
+      "size": 1541,
+      "priority": "medium",
+      "keywords": [
+        "database",
+        "migration",
+        "schema",
+        "alter",
+        "upgrade",
+        "downgrade",
+        "migracion",
+        "base datos"
+      ],
+      "agents": [
+        "devops",
+        "coder",
+        "devops"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "operations",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "deployment-pipeline-design": {
+      "displayName": "Deployment Pipeline Design",
+      "description": "Auto-generated entry for deployment-pipeline-design",
+      "size": 1332,
+      "priority": "medium",
+      "keywords": [
+        "deployment",
+        "pipeline",
+        "ci",
+        "cd",
+        "cicd",
+        "continuous",
+        "deploy",
+        "despliegue"
+      ],
+      "agents": [
+        "devops",
+        "coder"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "operations",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "design-system-patterns": {
+      "displayName": "Design System Patterns",
+      "description": "Auto-generated entry for design-system-patterns",
+      "size": 6826,
+      "priority": "medium",
+      "keywords": [
+        "design system",
+        "component library",
+        "tokens",
+        "theme",
+        "pattern",
+        "sistema diseño",
+        "biblioteca"
+      ],
+      "agents": [
+        "architect"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "architecture",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "doc-coauthoring": {
+      "displayName": "Doc Coauthoring",
+      "description": "Auto-generated entry for doc-coauthoring",
+      "size": 3288,
+      "priority": "medium",
+      "keywords": [
+        "documentation",
+        "docs",
+        "writing",
+        "coauthor",
+        "document",
+        "documentacion",
+        "escribir",
+        "redactar"
+      ],
+      "agents": [
+        "writer"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "documentation",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "docker-expert": {
+      "displayName": "Docker Expert",
+      "description": "Auto-generated entry for docker-expert",
+      "size": 2254,
+      "priority": "medium",
+      "keywords": [
+        "docker",
+        "container",
+        "dockerfile",
+        "image",
+        "compose",
+        "containerization",
+        "contenedor"
+      ],
+      "agents": [
+        "devops",
+        "coder"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "operations",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "e2e-testing-patterns": {
+      "displayName": "E2e Testing Patterns",
+      "description": "Auto-generated entry for e2e-testing-patterns",
+      "size": 2132,
+      "priority": "medium",
+      "keywords": [
+        "e2e",
+        "end-to-end",
+        "playwright",
+        "cypress",
+        "integration",
+        "test",
+        "testing",
+        "prueba",
+        "escribe",
+        "write",
+        "test",
+        "tests",
+        "testing",
+        "e2e",
+        "end-to-end",
+        "playwright",
+        "cypress"
+      ],
+      "agents": [
+        "tester"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "testing",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "error-handling-patterns": {
+      "displayName": "Error Handling Patterns",
+      "description": "Auto-generated entry for error-handling-patterns",
+      "size": 2478,
+      "priority": "medium",
+      "keywords": [
+        "error",
+        "exception",
+        "handling",
+        "try catch",
+        "result",
+        "manejo errores",
+        "excepcion"
+      ],
+      "agents": [
+        "coder",
+        "coder"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "development",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "executing-plans": {
+      "displayName": "Executing Plans",
+      "description": "Auto-generated entry for executing-plans",
+      "size": 504,
+      "priority": "medium",
+      "keywords": [
+        "execute",
+        "plan",
+        "implementation",
+        "implementar",
+        "ejecutar",
+        "plan"
+      ],
+      "agents": [
+        "product-manager"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "find-skills": {
+      "displayName": "Find Skills",
+      "description": "Auto-generated entry for find-skills",
+      "size": 949,
+      "priority": "medium",
+      "keywords": [
+        "find",
+        "skills"
+      ],
+      "agents": [
+        "researcher"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "frontend-design": {
+      "displayName": "Frontend Design",
+      "description": "Auto-generated entry for frontend-design",
+      "size": 777,
+      "priority": "medium",
+      "keywords": [
+        "frontend",
+        "design",
+        "ui",
+        "interface",
+        "component",
+        "layout",
+        "responsive",
+        "diseño",
+        "interfaz",
+        "componente"
+      ],
+      "agents": [
+        "ux-designer"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "design",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "github-actions-templates": {
+      "displayName": "Github Actions Templates",
+      "description": "Auto-generated entry for github-actions-templates",
+      "size": 1024,
+      "priority": "medium",
+      "keywords": [
+        "github actions",
+        "workflow",
+        "ci",
+        "cd",
+        "automation",
+        "pipeline",
+        "automatizacion"
+      ],
+      "agents": [
+        "devops",
+        "coder",
+        "devops"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "operations",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "interaction-design": {
+      "displayName": "Interaction Design",
+      "description": "Auto-generated entry for interaction-design",
+      "size": 6152,
+      "priority": "medium",
+      "keywords": [
+        "interaction",
+        "animation",
+        "transition",
+        "microinteraction",
+        "motion",
+        "interaccion",
+        "animacion"
+      ],
+      "agents": [
+        "ux-designer"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "design",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "internal-comms": {
+      "displayName": "Internal Comms",
+      "description": "Auto-generated entry for internal-comms",
+      "size": 2405,
+      "priority": "medium",
+      "keywords": [
+        "internal",
+        "comms"
+      ],
+      "agents": [
+        "writer"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "documentation",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "javascript-testing-patterns": {
+      "displayName": "Javascript Testing Patterns",
+      "description": "Auto-generated entry for javascript-testing-patterns",
+      "size": 3660,
+      "priority": "medium",
+      "keywords": [
+        "javascript",
+        "jest",
+        "vitest",
+        "testing library",
+        "test",
+        "mock",
+        "tdd",
+        "unit",
+        "integration"
+      ],
+      "agents": [
+        "tester"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "testing",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "kpi-dashboard-design": {
+      "displayName": "Kpi Dashboard Design",
+      "description": "Auto-generated entry for kpi-dashboard-design",
+      "size": 2066,
+      "priority": "medium",
+      "keywords": [
+        "kpi",
+        "dashboard",
+        "metrics",
+        "analytics",
+        "visualization",
+        "metricas",
+        "tablero",
+        "visualizacion"
+      ],
+      "agents": [
+        "product-manager",
+        "ux-designer"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "marketing-ideas": {
+      "displayName": "Marketing Ideas",
+      "description": "Auto-generated entry for marketing-ideas",
+      "size": 3574,
+      "priority": "medium",
+      "keywords": [
+        "marketing",
+        "growth",
+        "strategy",
+        "promotion",
+        "ideas",
+        "estrategia",
+        "promocion",
+        "crecimiento"
+      ],
+      "agents": [
+        "product-manager"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "microservices-patterns": {
+      "displayName": "Microservices Patterns",
+      "description": "Auto-generated entry for microservices-patterns",
+      "size": 1976,
+      "priority": "medium",
+      "keywords": [
+        "microservices",
+        "distributed",
+        "service",
+        "event-driven",
+        "saga",
+        "cqrs",
+        "microservicios"
+      ],
+      "agents": [
+        "architect"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "architecture",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "modern-javascript-patterns": {
+      "displayName": "Modern Javascript Patterns",
+      "description": "Auto-generated entry for modern-javascript-patterns",
+      "size": 3825,
+      "priority": "medium",
+      "keywords": [
+        "javascript",
+        "js",
+        "es6",
+        "es2015",
+        "arrow",
+        "promise",
+        "async",
+        "await",
+        "destructuring",
+        "spread",
+        "modern"
+      ],
+      "agents": [
+        "coder"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "development",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "monorepo-management": {
+      "displayName": "Monorepo Management",
+      "description": "Auto-generated entry for monorepo-management",
+      "size": 1974,
+      "priority": "medium",
+      "keywords": [
+        "monorepo",
+        "workspace",
+        "turborepo",
+        "nx",
+        "pnpm",
+        "lerna",
+        "mono repositorio"
+      ],
+      "agents": [
+        "architect"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "architecture",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "next-best-practices": {
+      "displayName": "Next Best Practices",
+      "description": "Auto-generated entry for next-best-practices",
+      "size": 14033,
+      "priority": "medium",
+      "keywords": [
+        "next",
+        "nextjs",
+        "react",
+        "ssr",
+        "ssg",
+        "isr",
+        "app router",
+        "pages",
+        "routing",
+        "metadata"
+      ],
+      "agents": [
+        "coder"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "development",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "nodejs-backend-patterns": {
+      "displayName": "Nodejs Backend Patterns",
+      "description": "Auto-generated entry for nodejs-backend-patterns",
+      "size": 3776,
+      "priority": "medium",
+      "keywords": [
+        "nodejs",
+        "node",
+        "backend",
+        "express",
+        "fastify",
+        "api",
+        "rest",
+        "server",
+        "servidor",
+        "middleware",
+        "routing"
+      ],
+      "agents": [
+        "coder"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "development",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "postgresql-table-design": {
+      "displayName": "Postgresql Table Design",
+      "description": "Auto-generated entry for postgresql-table-design",
+      "size": 2893,
+      "priority": "medium",
+      "keywords": [
+        "postgresql",
+        "postgres",
+        "table",
+        "schema",
+        "design",
+        "constraint",
+        "index",
+        "diseño",
+        "tabla"
+      ],
+      "agents": [
+        "data-scientist",
+        "coder"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "data-science",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "product-marketing-context": {
+      "displayName": "Product Marketing Context",
+      "description": "Auto-generated entry for product-marketing-context",
+      "size": 1373,
+      "priority": "medium",
+      "keywords": [
+        "product",
+        "marketing",
+        "context",
+        "positioning",
+        "producto",
+        "contexto",
+        "posicionamiento"
+      ],
+      "agents": [
+        "product-manager"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "prompt-engineering-patterns": {
+      "displayName": "Prompt Engineering Patterns",
+      "description": "Auto-generated entry for prompt-engineering-patterns",
+      "size": 9794,
+      "priority": "medium",
+      "keywords": [
+        "prompt",
+        "engineering",
+        "llm",
+        "ai",
+        "gpt",
+        "optimization",
+        "ingeniera prompts"
+      ],
+      "agents": [
+        "teacher"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "python-performance-optimization": {
+      "displayName": "Python Performance Optimization",
+      "description": "Auto-generated entry for python-performance-optimization",
+      "size": 3310,
+      "priority": "medium",
+      "keywords": [
+        "python",
+        "performance",
+        "optimization",
+        "profile",
+        "cprofile",
+        "memory",
+        "speed",
+        "optimizar",
+        "rendimiento"
+      ],
+      "agents": [
+        "coder",
+        "data-scientist"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "development",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "python-testing-patterns": {
+      "displayName": "Python Testing Patterns",
+      "description": "Auto-generated entry for python-testing-patterns",
+      "size": 3564,
+      "priority": "medium",
+      "keywords": [
+        "python",
+        "pytest",
+        "test",
+        "testing",
+        "fixture",
+        "mock",
+        "tdd",
+        "unit test",
+        "prueba",
+        "testear"
+      ],
+      "agents": [
+        "tester"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "testing",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "receiving-code-review": {
+      "displayName": "Receiving Code Review",
+      "description": "Auto-generated entry for receiving-code-review",
+      "size": 1238,
+      "priority": "medium",
+      "keywords": [
+        "code review",
+        "feedback",
+        "receiving",
+        "revision",
+        "recibir"
+      ],
+      "agents": [
+        "critic"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "requesting-code-review": {
+      "displayName": "Requesting Code Review",
+      "description": "Auto-generated entry for requesting-code-review",
+      "size": 1121,
+      "priority": "medium",
+      "keywords": [
+        "code review",
+        "request",
+        "solicitar",
+        "pedir revision"
+      ],
+      "agents": [
+        "critic"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "responsive-design": {
+      "displayName": "Responsive Design",
+      "description": "Auto-generated entry for responsive-design",
+      "size": 7261,
+      "priority": "medium",
+      "keywords": [
+        "responsive",
+        "mobile",
+        "tablet",
+        "desktop",
+        "breakpoint",
+        "media query",
+        "adaptable",
+        "movil"
+      ],
+      "agents": [
+        "ux-designer"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "design",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "seo-audit": {
+      "displayName": "Seo Audit",
+      "description": "Auto-generated entry for seo-audit",
+      "size": 4929,
+      "priority": "medium",
+      "keywords": [
+        "seo",
+        "audit",
+        "optimization",
+        "search",
+        "ranking",
+        "auditoria",
+        "optimizacion",
+        "busqueda"
+      ],
+      "agents": [
+        "researcher"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "skill-creator": {
+      "displayName": "Skill Creator",
+      "description": "Auto-generated entry for skill-creator",
+      "size": 3905,
+      "priority": "medium",
+      "keywords": [
+        "skill",
+        "create",
+        "creator",
+        "crear",
+        "habilidad"
+      ],
+      "agents": [
+        "teacher"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "sql-optimization-patterns": {
+      "displayName": "Sql Optimization Patterns",
+      "description": "Auto-generated entry for sql-optimization-patterns",
+      "size": 2430,
+      "priority": "medium",
+      "keywords": [
+        "sql",
+        "query",
+        "optimization",
+        "index",
+        "explain",
+        "performance",
+        "database",
+        "optimizar",
+        "consulta"
+      ],
+      "agents": [
+        "data-scientist",
+        "coder"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "data-science",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "systematic-debugging": {
+      "displayName": "Systematic Debugging",
+      "description": "Auto-generated entry for systematic-debugging",
+      "size": 6757,
+      "priority": "medium",
+      "keywords": [
+        "debug",
+        "debugging",
+        "error",
+        "bug",
+        "troubleshoot",
+        "depurar",
+        "error",
+        "problema"
+      ],
+      "agents": [
+        "critic"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "tailwind-design-system": {
+      "displayName": "Tailwind Design System",
+      "description": "Auto-generated entry for tailwind-design-system",
+      "size": 3140,
+      "priority": "medium",
+      "keywords": [
+        "tailwind",
+        "css",
+        "utility",
+        "design system",
+        "theme",
+        "tokens",
+        "sistema diseño"
+      ],
+      "agents": [
+        "ux-designer"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "design",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "test-driven-development": {
+      "displayName": "Test Driven Development",
+      "description": "Auto-generated entry for test-driven-development",
+      "size": 3661,
+      "priority": "medium",
+      "keywords": [
+        "tdd",
+        "test driven",
+        "red green refactor",
+        "unit test",
+        "testing",
+        "prueba"
+      ],
+      "agents": [
+        "coder",
+        "tester"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "development",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "typescript-advanced-types": {
+      "displayName": "Typescript Advanced Types",
+      "description": "Auto-generated entry for typescript-advanced-types",
+      "size": 3173,
+      "priority": "medium",
+      "keywords": [
+        "typescript",
+        "types",
+        "generic",
+        "conditional",
+        "mapped",
+        "utility",
+        "type safety",
+        "tipado"
+      ],
+      "agents": [
+        "coder"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "development",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "ui-ux-pro-max": {
+      "displayName": "Ui Ux Pro Max",
+      "description": "Auto-generated entry for ui-ux-pro-max",
+      "size": 2761,
+      "priority": "medium",
+      "keywords": [
+        "ui",
+        "ux",
+        "design",
+        "interface",
+        "user experience",
+        "experiencia usuario",
+        "diseño",
+        "interfaz",
+        "usability",
+        "usabilidad",
+        "wireframe",
+        "prototype",
+        "prototipo",
+        "figma",
+        "sketch"
+      ],
+      "agents": [
+        "ux-designer"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "design",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "vercel-react-best-practices": {
+      "displayName": "Vercel React Best Practices",
+      "description": "Auto-generated entry for vercel-react-best-practices",
+      "size": 27662,
+      "priority": "medium",
+      "keywords": [
+        "react",
+        "vercel",
+        "next",
+        "nextjs",
+        "performance",
+        "optimization",
+        "bundle",
+        "ssr",
+        "rsc",
+        "accessible",
+        "accessibility",
+        "component",
+        "components",
+        "accesible",
+        "componente",
+        "componentes",
+        "hooks",
+        "state",
+        "management",
+        "useState",
+        "useEffect",
+        "context"
+      ],
+      "agents": [
+        "coder"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "development",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "verification-before-completion": {
+      "displayName": "Verification Before Completion",
+      "description": "Auto-generated entry for verification-before-completion",
+      "size": 890,
+      "priority": "medium",
+      "keywords": [
+        "verification",
+        "verify",
+        "check",
+        "validate",
+        "verificar",
+        "validar",
+        "comprobar"
+      ],
+      "agents": [
+        "critic"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "webapp-testing": {
+      "displayName": "Webapp Testing",
+      "description": "Auto-generated entry for webapp-testing",
+      "size": 668,
+      "priority": "medium",
+      "keywords": [
+        "webapp",
+        "testing",
+        "browser",
+        "selenium",
+        "playwright",
+        "test",
+        "prueba",
+        "navegador"
+      ],
+      "agents": [
+        "tester"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "testing",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "web-design-guidelines": {
+      "displayName": "Web Design Guidelines",
+      "description": "Auto-generated entry for web-design-guidelines",
+      "size": 234,
+      "priority": "medium",
+      "keywords": [
+        "web",
+        "design",
+        "guidelines",
+        "best practices",
+        "standards",
+        "diseño",
+        "guia",
+        "estandar"
+      ],
+      "agents": [
+        "ux-designer"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "design",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "writing-plans": {
+      "displayName": "Writing Plans",
+      "description": "Auto-generated entry for writing-plans",
+      "size": 610,
+      "priority": "medium",
+      "keywords": [
+        "plan",
+        "planning",
+        "design",
+        "specification",
+        "planificar",
+        "diseñar",
+        "especificar"
+      ],
+      "agents": [
+        "product-manager"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "general",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    },
+    "writing-skills": {
+      "displayName": "Writing Skills",
+      "description": "Auto-generated entry for writing-skills",
+      "size": 16745,
+      "priority": "medium",
+      "keywords": [
+        "skill",
+        "writing",
+        "documentation",
+        "escribir",
+        "documentar",
+        "habilidad"
+      ],
+      "agents": [
+        "writer"
+      ],
+      "loadStrategy": "on-demand",
+      "category": "documentation",
+      "tags": [],
+      "dependencies": [],
+      "conflictsWith": [],
+      "lastUsed": null,
+      "usageCount": 0,
+      "avgRelevance": 0
+    }
+  },
+  "loadStrategies": {
+    "always": "Carga en todas las llamadas (0% ahorro)",
+    "on-demand": "Carga solo cuando se detectan keywords (85-95% ahorro)",
+    "explicit": "Carga solo con comando explícito (95-99% ahorro)",
+    "never": "Desactivado (100% ahorro)"
+  },
+  "priorityLevels": {
+    "critical": "Siempre cargar si es relevante",
+    "high": "Cargar si relevancia > 70%",
+    "medium": "Cargar si relevancia > 80%",
+    "low": "Cargar si relevancia > 90%"
+  }
+}

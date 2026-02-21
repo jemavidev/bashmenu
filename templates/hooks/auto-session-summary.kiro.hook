@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Auto-generate session summary",
+  "description": "Generate and display session summary after agent execution",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "bash scripts/generate-session-summary.sh"
+  }
+}

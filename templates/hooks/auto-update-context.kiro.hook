@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Auto-Update Project Context",
+  "description": "Automatically updates active-context.json with current project state, recent tasks, decisions, and focus area after each agent execution",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "bash scripts/update-context.sh",
+    "timeout": 5
+  }
+}

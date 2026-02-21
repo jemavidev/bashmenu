@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Auto-Update Memory Dashboard",
+  "description": "Automatically regenerates the memory dashboard HTML after AgentX updates memory files, ensuring the dashboard always shows current data",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "bash scripts/update-dashboard.sh",
+    "timeout": 10
+  }
+}

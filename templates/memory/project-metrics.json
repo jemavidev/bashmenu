@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "",
+  "project": {
+    "totalTokens": 0,
+    "lastCalculated": "",
+    "byCategory": {},
+    "byFileType": {},
+    "topFiles": [],
+    "growth": {
+      "sinceLastCalculation": 0,
+      "percentage": 0
+    }
+  },
+  "memory": {
+    "version": "1.0.0",
+    "lastUpdated": "",
+    "summary": {
+      "totalTokens": 0,
+      "totalEntries": 0,
+      "avgTokensPerEntry": 0,
+      "minTokens": 0,
+      "maxTokens": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "byCategory": {},
+      "byAgent": {},
+      "bySkill": {}
+    },
+    "fileStats": {},
+    "timeline": {},
+    "cleanupRecommendations": {
+      "threshold": 50000,
+      "currentUsage": 0,
+      "percentUsed": 0,
+      "oldestEntry": "",
+      "suggestedAction": "none"
+    },
+    "_comments": {
+      "purpose": "Global memory token tracking and cleanup recommendations",
+      "tokenCalculation": "tokens = Math.ceil(JSON.stringify(entry).length / 4)",
+      "thresholds": {
+        "0-50%": "healthy (green)",
+        "50-75%": "review (yellow)",
+        "75-100%": "cleanup needed (red)"
+      }
+    }
+  },
+  "llm": {
+    "sessions": [],
+    "totals": {
+      "input": 0,
+      "output": 0,
+      "total": 0
+    }
+  },
+  "efficiency": {
+    "memoryToProject": 0,
+    "memoryToConsumed": 0,
+    "projectToConsumed": 0
+  }
+}

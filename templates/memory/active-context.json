@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "",
+  "project": {
+    "name": "",
+    "description": "",
+    "phase": "",
+    "status": "",
+    "startDate": ""
+  },
+  "current": {
+    "focus": "",
+    "blockers": [],
+    "nextSteps": []
+  },
+  "context": {
+    "recentDecisions": [],
+    "activePatterns": [],
+    "openTasks": []
+  },
+  "_comments": {
+    "dateFormat": "Use ISO 8601 format with timezone for timestamps: YYYY-MM-DDTHH:MM:SS-05:00",
+    "example": "2026-02-16T09:00:00-05:00",
+    "note": "Dashboard will display date and time when timestamp includes 'T', otherwise only date"
+  }
+}

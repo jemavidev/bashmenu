@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Auto-estimate LLM usage",
+  "description": "Automatically estimate LLM token consumption after agent execution",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "bash scripts/estimate-llm-usage.sh"
+  }
+}

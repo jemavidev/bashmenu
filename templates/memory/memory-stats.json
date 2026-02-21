@@ -1,0 +1,43 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "",
+  "summary": {
+    "totalTokens": 0,
+    "totalEntries": 0,
+    "avgTokensPerEntry": 0,
+    "minTokens": 0,
+    "maxTokens": 0,
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "byCategory": {
+      "decisions": 0,
+      "tasks": 0,
+      "patterns": 0
+    },
+    "byAgent": {},
+    "bySkill": {}
+  },
+  "fileStats": {
+    "decision-log.json": 0,
+    "progress.json": 0,
+    "patterns.json": 0,
+    "dashboard.html": 0
+  },
+  "timeline": {},
+  "cleanupRecommendations": {
+    "threshold": 50000,
+    "currentUsage": 0,
+    "percentUsed": 0,
+    "oldestEntry": "",
+    "suggestedAction": "none"
+  },
+  "_comments": {
+    "purpose": "Global memory token tracking and cleanup recommendations",
+    "tokenCalculation": "tokens = Math.ceil(JSON.stringify(entry).length / 4)",
+    "thresholds": {
+      "0-50%": "healthy (green)",
+      "50-75%": "review (yellow)",
+      "75-100%": "cleanup needed (red)"
+    }
+  }
+}

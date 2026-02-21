@@ -4,21 +4,26 @@
 # This file defines external scripts that will appear in the Bashmenu menu.
 # Scripts are loaded automatically when Bashmenu starts.
 #
-# Format: Display Name|Absolute Path|Description|Required Level|Parameters
+# Format: Display Name|Path|Description|Required Level|Parameters
 #
 # Fields:
 #   1. Display Name    - Text shown in the menu (max 50 characters)
-#   2. Absolute Path   - Full path to the script (must be executable)
+#   2. Path            - Path to the script (can use variables, must be executable)
 #   3. Description     - Brief description of what the script does (max 100 chars)
 #   4. Required Level  - Permission level: 1=user, 2=admin, 3=root
 #   5. Parameters      - Optional default parameters to pass to the script
+#
+# Path Variables:
+#   ${BASHMENU_PLUGINS_DIR}      - User plugin directory (~/.bashmenu/plugins)
+#   ${BASHMENU_SYSTEM_PLUGINS}   - System plugin directory (/opt/bashmenu/share/bashmenu/plugins)
+#   ${PROJECT_ROOT}              - Development directory (where bashmenu is installed)
 #
 # Rules:
 #   - Lines starting with # are comments and will be ignored
 #   - Empty lines are ignored
 #   - Scripts must have execute permissions (chmod +x script.sh)
 #   - Scripts must be in allowed directories (see ALLOWED_SCRIPT_DIRS in config.conf)
-#   - Use absolute paths only (e.g., /opt/bashmenu/plugins/myscript.sh)
+#   - Use variables for portability (e.g., ${BASHMENU_PLUGINS_DIR}/myscript.sh)
 #
 # Security:
 #   - Scripts are validated before execution
@@ -32,27 +37,19 @@
 # =============================================================================
 
 # Git Operations - Manage Git repositories
-# The following examples are enabled by default. Comment them out if not needed:
-
-# Git Operations - Manage Git repositories
 # Uncomment the following lines to enable Git operations:
-# Git Status|/opt/bashmenu/plugins/examples/git_operations.sh|Show repository status|1|status
-# Git Pull|/opt/bashmenu/plugins/examples/git_operations.sh|Pull latest changes|1|pull
-# Git Log|/opt/bashmenu/plugins/examples/git_operations.sh|Show recent commits|1|log
-# Git Branch|/opt/bashmenu/plugins/examples/git_operations.sh|Show branch info|1|branch
+# Git Status|${BASHMENU_PLUGINS_DIR}/examples/git_operations.sh|Show repository status|1|status
+# Git Pull|${BASHMENU_PLUGINS_DIR}/examples/git_operations.sh|Pull latest changes|1|pull
+# Git Log|${BASHMENU_PLUGINS_DIR}/examples/git_operations.sh|Show recent commits|1|log
+# Git Branch|${BASHMENU_PLUGINS_DIR}/examples/git_operations.sh|Show branch info|1|branch
 
 # Docker Operations - Manage Docker containers
 # Uncomment the following lines to enable Docker operations:
-# Docker PS|/opt/bashmenu/plugins/examples/docker_manager.sh|Show running containers|1|ps
-# Docker Logs|/opt/bashmenu/plugins/examples/docker_manager.sh|Show container logs|1|logs
-# Docker Build|/opt/bashmenu/plugins/examples/docker_manager.sh|Build containers|2|build
-# Docker Restart|/opt/bashmenu/plugins/examples/docker_manager.sh|Restart containers|2|restart
-# Docker Images|/opt/bashmenu/plugins/examples/docker_manager.sh|List Docker images|1|images
-
-# More Docker operations (uncomment to enable):
-# Docker Build|/opt/bashmenu/plugins/examples/docker_manager.sh|Build containers|2|build
-# Docker Restart|/opt/bashmenu/plugins/examples/docker_manager.sh|Restart containers|2|restart
-# Docker Images|/opt/bashmenu/plugins/examples/docker_manager.sh|List Docker images|1|images
+# Docker PS|${BASHMENU_PLUGINS_DIR}/examples/docker_manager.sh|Show running containers|1|ps
+# Docker Logs|${BASHMENU_PLUGINS_DIR}/examples/docker_manager.sh|Show container logs|1|logs
+# Docker Build|${BASHMENU_PLUGINS_DIR}/examples/docker_manager.sh|Build containers|2|build
+# Docker Restart|${BASHMENU_PLUGINS_DIR}/examples/docker_manager.sh|Restart containers|2|restart
+# Docker Images|${BASHMENU_PLUGINS_DIR}/examples/docker_manager.sh|List Docker images|1|images
 
 # =============================================================================
 # Your Custom Scripts
@@ -61,11 +58,11 @@
 # 
 # Examples:
 #
-# Backup Database|/opt/bashmenu/plugins/backup_db.sh|Backup production database|2|
-# Deploy App|/opt/bashmenu/plugins/deploy.sh|Deploy application to production|3|production
-# Check Services|/opt/bashmenu/plugins/check_services.sh|Check service status|1|
-# Restart Nginx|/opt/bashmenu/plugins/restart_nginx.sh|Restart Nginx web server|2|
-# Update System|/opt/bashmenu/plugins/update_system.sh|Update system packages|3|
+# Backup Database|${BASHMENU_PLUGINS_DIR}/backup_db.sh|Backup production database|2|
+# Deploy App|${BASHMENU_PLUGINS_DIR}/deploy.sh|Deploy application to production|3|production
+# Check Services|${BASHMENU_PLUGINS_DIR}/check_services.sh|Check service status|1|
+# Restart Nginx|${BASHMENU_PLUGINS_DIR}/restart_nginx.sh|Restart Nginx web server|2|
+# Update System|${BASHMENU_PLUGINS_DIR}/update_system.sh|Update system packages|3|
 #
 # =============================================================================
 

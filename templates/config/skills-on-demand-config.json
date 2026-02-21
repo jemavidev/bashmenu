@@ -1,0 +1,65 @@
+{
+  "version": "1.0.0",
+  "enabled": true,
+  "detection": {
+    "enabled": true,
+    "minRelevanceThreshold": 40,
+    "maxSkillsPerCall": 5,
+    "maxTokensPerCall": 30000,
+    "keywordMatchWeight": 0.6,
+    "agentMatchWeight": 0.3,
+    "priorityWeight": 0.1,
+    "fallbackToCoreSkills": true,
+    "coreSkillsCount": 2
+  },
+  "loading": {
+    "strategy": "on-demand",
+    "preloadCritical": false,
+    "lazyLoad": true,
+    "cacheEnabled": true,
+    "cacheTTL": 300
+  },
+  "optimization": {
+    "cacheDetectionResults": true,
+    "learnFromUsage": true,
+    "autoAdjustThresholds": false,
+    "updateKeywordsFromUsage": false
+  },
+  "performance": {
+    "maxDetectionTimeMs": 300,
+    "enableParallelProcessing": false,
+    "useKeywordIndex": true
+  },
+  "logging": {
+    "enabled": true,
+    "logFile": ".kiro/memory/skills-usage.json",
+    "logLevel": "info",
+    "includeSkippedSkills": true,
+    "logDetectionDetails": true
+  },
+  "overrides": {
+    "alwaysLoad": [],
+    "neverLoad": [],
+    "priorityOverrides": {},
+    "agentSpecificThresholds": {}
+  },
+  "safety": {
+    "enableRollback": true,
+    "backupBeforeModification": true,
+    "validateBeforeInjection": true,
+    "maxConsecutiveFailures": 3
+  },
+  "_comments": {
+    "minRelevanceThreshold": "Minimum relevance score (0-100) for a skill to be loaded",
+    "maxSkillsPerCall": "Maximum number of skills to load in a single call",
+    "maxTokensPerCall": "Maximum total tokens from skills per call",
+    "keywordMatchWeight": "Weight for keyword matching in relevance calculation (0-1)",
+    "agentMatchWeight": "Weight for agent matching in relevance calculation (0-1)",
+    "priorityWeight": "Weight for skill priority in relevance calculation (0-1)",
+    "fallbackToCoreSkills": "Load core skills if detection finds nothing relevant",
+    "coreSkillsCount": "Number of core skills to load as fallback",
+    "strategy": "Loading strategy: on-demand, always, explicit, or never",
+    "cacheTTL": "Cache time-to-live in seconds",
+    "maxDetectionTimeMs": "Maximum time allowed for detection before fallback"
+  }
+}

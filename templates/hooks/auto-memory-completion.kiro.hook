@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Auto-Memory on Task Completion",
+  "description": "Automatically reviews completed work and updates memory JSON files when tasks are finished, decisions are made, or patterns are identified. Triggers once per agent conversation for cost efficiency.",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the conversation and work just completed. Determine if any memory-worthy events occurred:\n\nMEMORY-WORTHY EVENTS:\n- ✅ Completed task or milestone (progress.json)\n- 🎯 Technical decision made (decision-log.json)\n- 🧩 Pattern or reusable solution identified (patterns.json)\n- 🔧 Significant bug fix or learning\n\nANALYSIS STEPS:\n1. Review what was accomplished in this conversation\n2. Identify if it's memory-worthy (be selective)\n3. If YES, determine type: decision, task, or pattern\n4. Load ONLY the relevant file (.kiro/memory/[type].json)\n5. Add concise entry (100-150 tokens):\n   - Next available ID (DEC-XXX, TASK-XXX, PAT-XXX)\n   - Date, title, brief description\n   - Agent name, relevant tags\n6. Save and respond: \"✅ Memory updated: [filename]\"\n\nIF NOT MEMORY-WORTHY:\n- Respond: \"⏭️ No memory update needed\"\n\nGUIDELINES:\n- Be selective - not every conversation needs documentation\n- Focus on completions, decisions, and patterns\n- Keep entries minimal but informative\n- Only load the ONE file you need"
+  },
+  "workspaceFolderName": "BetterAgents",
+  "shortName": "auto-memory-completion"
+}

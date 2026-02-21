@@ -7,7 +7,7 @@ set -euo pipefail
 # Bashmenu - Sistema de Menú Interactivo para Administración
 # =============================================================================
 # Descripción: Punto de entrada principal del sistema Bashmenu
-# Versión:     2.1
+# Versión:     2.2
 # Autor:       JESUS MARIA VILLALOBOS
 # =============================================================================
 
@@ -34,16 +34,31 @@ fi
 # =============================================================================
 
 readonly SCRIPT_NAME="Bashmenu"
-readonly SCRIPT_VERSION="2.1"
+readonly SCRIPT_VERSION="2.2"
 readonly SCRIPT_AUTHOR="JESUS MARIA VILLALOBOS"
 
 # =============================================================================
 # Global Variables
 # =============================================================================
 
-# Script directory
+# Script directory and project root
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Export for use in other modules
+export SCRIPT_DIR
+export PROJECT_ROOT
+
+# Detect installation type
+if [[ "$PROJECT_ROOT" == "/opt/bashmenu" ]]; then
+    readonly INSTALL_TYPE="system"
+elif [[ "$PROJECT_ROOT" == "$HOME/.local/bashmenu" ]] || [[ "$PROJECT_ROOT" == "$HOME/bashmenu" ]]; then
+    readonly INSTALL_TYPE="user"
+else
+    readonly INSTALL_TYPE="development"
+fi
+
+export INSTALL_TYPE
 
 # Configuration file
 readonly CONFIG_FILE="$PROJECT_ROOT/config/config.conf"
@@ -97,6 +112,45 @@ print_header() {
 # Validation Functions
 # =============================================================================
 
+# validate_installation() -> int
+# Validates that the installation is properly configured
+# Returns: 0 on success, 1 on failure
+validate_installation() {
+    local errors=0
+    
+    # Check critical directories exist
+    if [[ ! -d "$SCRIPT_DIR" ]]; then
+        print_error "Script directory not found: $SCRIPT_DIR"
+        errors=$((errors + 1))
+    fi
+    
+    if [[ ! -d "$PROJECT_ROOT" ]]; then
+        print_error "Project root not found: $PROJECT_ROOT"
+        errors=$((errors + 1))
+    fi
+    
+    # Check if running from expected location
+    if [[ "$INSTALL_TYPE" == "system" ]]; then
+        print_info "Running from system installation: /opt/bashmenu"
+    elif [[ "$INSTALL_TYPE" == "user" ]]; then
+        print_info "Running from user installation: $PROJECT_ROOT"
+    else
+        print_info "Running from development location: $PROJECT_ROOT"
+    fi
+    
+    # Validate configuration is loaded
+    if [[ "${BASHMENU_CONFIG_LOADED:-false}" != "true" ]]; then
+        print_warning "Configuration not loaded yet"
+    fi
+    
+    if [[ $errors -gt 0 ]]; then
+        print_error "Installation validation failed ($errors errors)"
+        return 1
+    fi
+    
+    return 0
+}
+
 # check_requirements() -> int
 # Checks if all required system components are available
 # Returns: 0 on success, 1 on failure
@@ -115,7 +169,7 @@ check_requirements() {
     done
     
     # Check if source files exist
-    local required_files=("utils.sh" "menu.sh")
+    local required_files=("core/utils.sh" "menu_refactored.sh")
     for file in "${required_files[@]}"; do
         if [[ ! -f "$SCRIPT_DIR/$file" ]]; then
             print_error "Required file not found: $file"
@@ -196,7 +250,13 @@ verify_required_functions() {
 # =============================================================================
 
 initialize_system() {
-    print_info "Initializing Bashmenu system..."
+    print_info "Initializing Bashmenu v$SCRIPT_VERSION..."
+    
+    # Validate installation first
+    if ! validate_installation; then
+        print_error "Installation validation failed"
+        return 1
+    fi
     
     # Load configuration with validation and logging
     load_configuration
@@ -228,10 +288,11 @@ initialize_system() {
     
     # Load theme
     if declare -f load_theme >/dev/null; then
-        load_theme "${DEFAULT_THEME:-default}"
-        print_success "Theme loaded: ${DEFAULT_THEME:-default}"
+        local theme="${BASHMENU_THEME:-${DEFAULT_THEME:-modern}}"
+        load_theme "$theme"
+        print_success "Theme loaded: $theme"
         if declare -f log_info >/dev/null; then
-            log_info "Theme loaded: ${DEFAULT_THEME:-default}"
+            log_info "Theme loaded: $theme"
         fi
     else
         print_error "Theme loading failed"
@@ -243,7 +304,9 @@ initialize_system() {
     
     print_success "System initialization completed"
     if declare -f log_info >/dev/null; then
-        log_info "Bashmenu system initialization completed successfully"
+        log_info "Bashmenu v$SCRIPT_VERSION initialization completed successfully"
+        log_info "Installation type: $INSTALL_TYPE"
+        log_info "Project root: $PROJECT_ROOT"
     fi
     return 0
 }
@@ -385,10 +448,35 @@ validate_config_values() {
 load_modules() {
     print_info "Loading system modules..."
     
-    # Load logger first (with validation)
-    if [[ -f "$SCRIPT_DIR/logger.sh" ]]; then
-        if bash -n "$SCRIPT_DIR/logger.sh" 2>/dev/null; then
-            if source "$SCRIPT_DIR/logger.sh" 2>/dev/null; then
+    # Load config module first (critical)
+    if [[ -f "$SCRIPT_DIR/core/config.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/core/config.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/core/config.sh" 2>/dev/null; then
+                print_success "Config module loaded"
+                
+                # Load configuration from .env files
+                load_configuration
+                
+                if declare -f log_info >/dev/null; then
+                    log_info "Config module loaded successfully"
+                fi
+            else
+                print_warning "Config module failed to load (runtime error)"
+                print_warning "Using fallback configuration"
+            fi
+        else
+            print_warning "Config module has syntax errors"
+            print_warning "Using fallback configuration"
+        fi
+    else
+        print_warning "Config module not found: $SCRIPT_DIR/core/config.sh"
+        print_warning "Using fallback configuration"
+    fi
+    
+    # Load logger second (with validation)
+    if [[ -f "$SCRIPT_DIR/core/logger.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/core/logger.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/core/logger.sh" 2>/dev/null; then
                 print_success "Logger module loaded"
                 log_info "Logger module loaded successfully"
             else
@@ -400,14 +488,14 @@ load_modules() {
             print_warning "Using fallback logging"
         fi
     else
-        print_warning "Logger module not found: $SCRIPT_DIR/logger.sh"
+        print_warning "Logger module not found: $SCRIPT_DIR/core/logger.sh"
         print_warning "Using fallback logging"
     fi
     
     # Load script loader module
-    if [[ -f "$SCRIPT_DIR/script_loader.sh" ]]; then
-        if bash -n "$SCRIPT_DIR/script_loader.sh" 2>/dev/null; then
-            if source "$SCRIPT_DIR/script_loader.sh" 2>/dev/null; then
+    if [[ -f "$SCRIPT_DIR/scripts/loader.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/scripts/loader.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/scripts/loader.sh" 2>/dev/null; then
                 print_success "Script loader module loaded"
                 if declare -f log_info >/dev/null; then
                     log_info "Script loader module loaded successfully"
@@ -421,9 +509,9 @@ load_modules() {
     fi
     
     # Load script validator module
-    if [[ -f "$SCRIPT_DIR/script_validator.sh" ]]; then
-        if bash -n "$SCRIPT_DIR/script_validator.sh" 2>/dev/null; then
-            if source "$SCRIPT_DIR/script_validator.sh" 2>/dev/null; then
+    if [[ -f "$SCRIPT_DIR/scripts/validator.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/scripts/validator.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/scripts/validator.sh" 2>/dev/null; then
                 print_success "Script validator module loaded"
                 if declare -f log_info >/dev/null; then
                     log_info "Script validator module loaded successfully"
@@ -437,9 +525,9 @@ load_modules() {
     fi
     
     # Load script executor module
-    if [[ -f "$SCRIPT_DIR/script_executor.sh" ]]; then
-        if bash -n "$SCRIPT_DIR/script_executor.sh" 2>/dev/null; then
-            if source "$SCRIPT_DIR/script_executor.sh" 2>/dev/null; then
+    if [[ -f "$SCRIPT_DIR/scripts/executor.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/scripts/executor.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/scripts/executor.sh" 2>/dev/null; then
                 print_success "Script executor module loaded"
                 if declare -f log_info >/dev/null; then
                     log_info "Script executor module loaded successfully"
@@ -453,9 +541,9 @@ load_modules() {
     fi
     
     # Load utilities (critical module)
-    if [[ -f "$SCRIPT_DIR/utils.sh" ]]; then
-        if bash -n "$SCRIPT_DIR/utils.sh" 2>/dev/null; then
-            if source "$SCRIPT_DIR/utils.sh" 2>/dev/null; then
+    if [[ -f "$SCRIPT_DIR/core/utils.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/core/utils.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/core/utils.sh" 2>/dev/null; then
                 print_success "Utils module loaded"
                 if declare -f log_info >/dev/null; then
                     log_info "Utils module loaded successfully"
@@ -470,23 +558,23 @@ load_modules() {
         else
             print_error "Utils module has syntax errors"
             if declare -f log_error >/dev/null; then
-                log_error "Utils module has syntax errors: $SCRIPT_DIR/utils.sh"
+                log_error "Utils module has syntax errors: $SCRIPT_DIR/core/utils.sh"
             fi
             return 1
         fi
     else
-        print_error "Utils module not found: $SCRIPT_DIR/utils.sh"
+        print_error "Utils module not found: $SCRIPT_DIR/core/utils.sh"
         if declare -f log_error >/dev/null; then
-            log_error "Utils module not found: $SCRIPT_DIR/utils.sh"
+            log_error "Utils module not found: $SCRIPT_DIR/core/utils.sh"
         fi
         return 1
     fi
     
 
     # Load menu system (critical module)
-    if [[ -f "$SCRIPT_DIR/menu.sh" ]]; then
-        if bash -n "$SCRIPT_DIR/menu.sh" 2>/dev/null; then
-            if source "$SCRIPT_DIR/menu.sh" 2>/dev/null; then
+    if [[ -f "$SCRIPT_DIR/menu_refactored.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/menu_refactored.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/menu_refactored.sh" 2>/dev/null; then
                 print_success "Menu module loaded"
                 if declare -f log_info >/dev/null; then
                     log_info "Menu module loaded successfully"
@@ -510,14 +598,14 @@ load_modules() {
         else
             print_error "Menu module has syntax errors"
             if declare -f log_error >/dev/null; then
-                log_error "Menu module has syntax errors: $SCRIPT_DIR/menu.sh"
+                log_error "Menu module has syntax errors: $SCRIPT_DIR/menu_refactored.sh"
             fi
             return 1
         fi
     else
-        print_error "Menu module not found: $SCRIPT_DIR/menu.sh"
+        print_error "Menu module not found: $SCRIPT_DIR/menu_refactored.sh"
         if declare -f log_error >/dev/null; then
-            log_error "Menu module not found: $SCRIPT_DIR/menu.sh"
+            log_error "Menu module not found: $SCRIPT_DIR/menu_refactored.sh"
         fi
         return 1
     fi
@@ -525,9 +613,9 @@ load_modules() {
     # Load enhanced UI modules (optional, non-critical)
     
     # Load professional themes system
-    if [[ -f "$SCRIPT_DIR/professional_themes.sh" ]]; then
-        if bash -n "$SCRIPT_DIR/professional_themes.sh" 2>/dev/null; then
-            if source "$SCRIPT_DIR/professional_themes.sh" 2>/dev/null; then
+    if [[ -f "$SCRIPT_DIR/ui/professional_themes.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/ui/professional_themes.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/ui/professional_themes.sh" 2>/dev/null; then
                 print_success "Professional themes module loaded"
                 if declare -f log_info >/dev/null; then
                     log_info "Professional themes loaded successfully"
@@ -541,9 +629,9 @@ load_modules() {
     fi
     
     # Load enhanced menu display system
-    if [[ -f "$SCRIPT_DIR/enhanced_menu_display.sh" ]]; then
-        if bash -n "$SCRIPT_DIR/enhanced_menu_display.sh" 2>/dev/null; then
-            if source "$SCRIPT_DIR/enhanced_menu_display.sh" 2>/dev/null; then
+    if [[ -f "$SCRIPT_DIR/ui/enhanced_display.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/ui/enhanced_display.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/ui/enhanced_display.sh" 2>/dev/null; then
                 print_success "Enhanced menu display module loaded"
                 if declare -f log_info >/dev/null; then
                     log_info "Enhanced menu display loaded successfully"
@@ -557,9 +645,9 @@ load_modules() {
     fi
     
     # Load legacy enhanced UI utilities
-    if [[ -f "$SCRIPT_DIR/ui_enhanced.sh" ]]; then
-        if bash -n "$SCRIPT_DIR/ui_enhanced.sh" 2>/dev/null; then
-            if source "$SCRIPT_DIR/ui_enhanced.sh" 2>/dev/null; then
+    if [[ -f "$SCRIPT_DIR/ui/enhanced.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/ui/enhanced.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/ui/enhanced.sh" 2>/dev/null; then
                 print_success "Legacy enhanced UI module loaded"
                 if declare -f log_info >/dev/null; then
                     log_info "Legacy enhanced UI utilities loaded successfully"
@@ -573,9 +661,9 @@ load_modules() {
     fi
     
     # Load dialog wrapper
-    if [[ -f "$SCRIPT_DIR/dialog_wrapper.sh" ]]; then
-        if bash -n "$SCRIPT_DIR/dialog_wrapper.sh" 2>/dev/null; then
-            if source "$SCRIPT_DIR/dialog_wrapper.sh" 2>/dev/null; then
+    if [[ -f "$SCRIPT_DIR/ui/dialog_wrapper.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/ui/dialog_wrapper.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/ui/dialog_wrapper.sh" 2>/dev/null; then
                 print_success "Dialog wrapper module loaded"
                 if declare -f log_info >/dev/null; then
                     log_info "Dialog/Whiptail integration loaded successfully"
@@ -589,9 +677,9 @@ load_modules() {
     fi
     
     # Load fzf integration
-    if [[ -f "$SCRIPT_DIR/fzf_integration.sh" ]]; then
-        if bash -n "$SCRIPT_DIR/fzf_integration.sh" 2>/dev/null; then
-            if source "$SCRIPT_DIR/fzf_integration.sh" 2>/dev/null; then
+    if [[ -f "$SCRIPT_DIR/ui/fzf_integration.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/ui/fzf_integration.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/ui/fzf_integration.sh" 2>/dev/null; then
                 print_success "fzf integration module loaded"
                 if declare -f log_info >/dev/null; then
                     log_info "fzf search integration loaded successfully"
@@ -605,9 +693,9 @@ load_modules() {
     fi
     
     # Load notifications system
-    if [[ -f "$SCRIPT_DIR/notifications.sh" ]]; then
-        if bash -n "$SCRIPT_DIR/notifications.sh" 2>/dev/null; then
-            if source "$SCRIPT_DIR/notifications.sh" 2>/dev/null; then
+    if [[ -f "$SCRIPT_DIR/ui/notifications.sh" ]]; then
+        if bash -n "$SCRIPT_DIR/ui/notifications.sh" 2>/dev/null; then
+            if source "$SCRIPT_DIR/ui/notifications.sh" 2>/dev/null; then
                 print_success "Notifications module loaded"
                 if declare -f log_info >/dev/null; then
                     log_info "Notification system loaded successfully"
@@ -759,13 +847,16 @@ main() {
 
     # Check requirements
     if ! check_requirements; then
-        print_error "System requirements not met. Exiting."
+        print_error "System requirements not met"
+        print_error "Please ensure all required commands are installed"
+        print_error "Run 'make setup' to install dependencies"
         exit 1
     fi
     
     # Initialize system
     if ! initialize_system; then
-        print_error "System initialization failed. Exiting."
+        print_error "System initialization failed"
+        print_error "Check logs for details: ${BASHMENU_LOG_FILE:-/tmp/bashmenu.log}"
         exit 1
     fi
     
@@ -835,6 +926,13 @@ show_config_info() {
     print_header "Configuration Information"
     echo ""
 
+    # Use new config system if available
+    if declare -f print_config >/dev/null; then
+        print_config
+        return 0
+    fi
+
+    # Fallback to old method
     if [[ -f "$CONFIG_FILE" ]]; then
         echo -e "${GREEN}Configuration file:${NC} $CONFIG_FILE"
         echo ""

@@ -1,0 +1,17 @@
+{
+  "enabled": false,
+  "name": "Smart Auto-Memory Documentation",
+  "description": "Automatically analyzes file changes and updates memory JSON files when significant events occur (decisions, patterns, completed tasks). Uses smart file loading to minimize token costs.",
+  "version": "1",
+  "when": {
+    "type": "postToolUse",
+    "toolTypes": [
+      "write",
+      "spec"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A file was just modified. Analyze if this change represents a memory-worthy event:\n\nMEMORY-WORTHY EVENTS:\n- Technical decision (architecture, technology choice, design pattern)\n- Completed task or milestone\n- Identified pattern or reusable solution\n- Significant bug fix or learning\n\nIF MEMORY-WORTHY:\n1. Determine type: decision, task, or pattern\n2. Load ONLY the relevant file (.kiro/memory/decision-log.json, progress.json, or patterns.json)\n3. Add a concise entry (100-150 tokens max):\n   - Use next available ID (DEC-XXX, TASK-XXX, PAT-XXX)\n   - Include: id, date, title, brief description, agent, tags\n   - Keep it minimal but informative\n4. Save the file\n5. Respond: \"✅ Memory updated: [filename]\"\n\nIF NOT MEMORY-WORTHY:\n- Respond: \"⏭️ Skipped: Minor change, not memory-worthy\"\n\nIMPORTANT:\n- Only load the ONE file you need to update\n- Keep entries under 150 tokens\n- Be selective - not every change needs documentation\n- Focus on decisions, completions, and patterns"
+  }
+}

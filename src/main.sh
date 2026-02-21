@@ -138,11 +138,6 @@ validate_installation() {
         print_info "Running from development location: $PROJECT_ROOT"
     fi
     
-    # Validate configuration is loaded
-    if [[ "${BASHMENU_CONFIG_LOADED:-false}" != "true" ]]; then
-        print_warning "Configuration not loaded yet"
-    fi
-    
     if [[ $errors -gt 0 ]]; then
         print_error "Installation validation failed ($errors errors)"
         return 1
